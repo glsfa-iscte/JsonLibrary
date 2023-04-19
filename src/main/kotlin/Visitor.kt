@@ -4,7 +4,8 @@ interface Visitor {
 }
 
 /*
-TODO    This file will contain all the operations on JsonElements
+TODO
+This file will contain all the operations on JsonElements
 efetuar pesquisas, como por exemplo:
     obter todos os valores guardados em propriedades com identificador “numero”
     obter todos os objetos que têm as propriedades numero e nome

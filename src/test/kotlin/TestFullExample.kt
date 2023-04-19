@@ -1,10 +1,10 @@
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 class TestFullExample {
-
+//os espaços passar a \t
     val inscricoesString: String =
             "{\n" +
-            "  \"uc\" : \"PA\",\n" +
+            "\"uc\" : \"PA\",\n" +
             "  \"ects\" : 6.0,\n" +
             "  \"data-exame\" : null,\n" +
             "  \"inscritos\" : [\n" +
@@ -150,7 +150,7 @@ class TestFullExample {
         val jsonObj03 = instanciateJson(testNumber)
         val jsonObj04 = instanciateJson(testBoolean)
         val jsonObj05 = instanciateJson(testNull)
-        val jsonObj06 = instanciateJson(testMap)
+        val jsonObj06 = instanciateJson(testMap).toJsonString
         val jsonObj07 = instanciateJson(testCollection)
         val jsonObj08 = instanciateJson(testEnum)
 

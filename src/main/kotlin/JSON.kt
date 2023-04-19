@@ -107,32 +107,33 @@ val KClass<*>.dataClassFields: List<KProperty<*>>
     }
 
 //TODO ADICIONAR UMA FUNCAO QUE VAI FAZER WHEN COM A ANOTACAO
-fun instanciateJson(obj : Any?):JsonValue{
-    when (obj) {
-        is String -> return JsonString(obj)
-        is Number -> return JsonNumber(obj)
-        is Boolean -> return JsonBoolean(obj)
-        null -> return JsonNull()
-        is Map<*, *> -> return JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) })
-        is Collection<*> -> return JsonArray(obj.map { instanciateJson(it) })
-        is Enum<*> -> return instanciateJson(obj)
-    }
-    //Preciso de adicionar uma maneira para, caso tenha uma anotacao, ele fazer esse comportamento
-    if (obj!!::class.isData) {
-        val propertyList = obj::class.dataClassFields
-        return JsonObject(
-            //posso fazer o filter do propertyList, que vai dar KProperty
-            propertyList.filter{!it.hasAnnotation<IgnoreProperty>()}.associate {
-                val value = it.call(obj)
-                if(it.hasAnnotation<ForceJsonString>() && allowedReturnType(it))
-                    it.name to instanciateJson(value.toString())
-                else
-                    it.name to instanciateJson(value)
-            }
-        )
+fun instanciateJson(obj : Any?):JsonValue {
+    return when (obj) {
+        is String -> JsonString(obj)
+        is Number -> JsonNumber(obj)
+        is Boolean -> JsonBoolean(obj)
+        null -> JsonNull()
+        is Map<*, *> -> JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) })
+        is Collection<*> -> JsonArray(obj.map { instanciateJson(it) })
+        is Enum<*> -> instanciateJson(obj)
+        else -> {
+            if (obj::class.isData) {
+                val propertyList = obj::class.dataClassFields
+                return JsonObject(
+                    //posso fazer o filter do propertyList, que vai dar KProperty
+                    propertyList.filter { !it.hasAnnotation<IgnoreProperty>() }.associate {
+                        val value = it.call(obj)
+                        if (it.hasAnnotation<ForceJsonString>() && allowedReturnType(it))
+                            it.name to instanciateJson(value.toString())
+                        else
+                            it.name to instanciateJson(value)
+                    }
+                )
 
+            }
+            return JsonObject()
+        }
     }
-    return JsonObject()
 }
 
 @Target(AnnotationTarget.PROPERTY)
@@ -141,7 +142,7 @@ annotation class IgnoreProperty
 @Target(AnnotationTarget.PROPERTY)
 annotation class ForceJsonString
 
-//used in ForceJsonString so that it only converts to JsonString if the return type is in the when structure
+//used in ForceJsonString so that it only converts to JsonString if the return type is in the wen structure
 fun allowedReturnType(p: KProperty<*>):Boolean =
      when(p.returnType.classifier){
         Int::class ->  true
