@@ -118,37 +118,33 @@ fun instanciateJson(obj : Any?):JsonValue{
         is Enum<*> -> return instanciateJson(obj)
     }
     //Preciso de adicionar uma maneira para, caso tenha uma anotacao, ele fazer esse comportamento
-    if (obj!!::class.isData && !hasIgnorePropertyAnnotation(obj::class)) {
+    if (obj!!::class.isData) {
         val propertyList = obj::class.dataClassFields
         return JsonObject(
             //posso fazer o filter do propertyList, que vai dar KProperty
-            propertyList.filter{!hasIgnorePropertyAnnotation(it)}.associate { it.name to instanciateJson(it.call(obj)) }
+            propertyList.filter{!it.hasAnnotation<IgnoreProperty>()}.associate {
+                val value = it.call(obj)
+                if(it.hasAnnotation<ForceJsonString>() && allowedReturnType(it))
+                    it.name to instanciateJson(value.toString())
+                else
+                    it.name to instanciateJson(value)
+            }
         )
 
     }
     return JsonObject()
 }
 
-//@Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS
-    //, NAO SEI SE POSSO ADICIONAR O ABAIXO, SE NÃO PUDER, VOU TER QUE MUDAR A LÓGICA JA QUE MNÃO POSSO FAZER
-    // val testMap = mapOf<Any?, Any?>(
-    //            @IgnoreProperty
-    //            "Test" to testString,
-//, AnnotationTarget.EXPRESSION
-//)
-//@Retention(AnnotationRetention.SOURCE)
-@Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
+@Target(AnnotationTarget.PROPERTY)
 annotation class IgnoreProperty
 
 @Target(AnnotationTarget.PROPERTY)
 annotation class ForceJsonString
 
-fun hasIgnorePropertyAnnotation(obj: Any?) : Boolean {
-    return when(obj){
-        is KClass<*> -> obj.hasAnnotation<IgnoreProperty>()
-        is KProperty<*> -> obj.hasAnnotation<IgnoreProperty>()
-        is Map.Entry<*, *> -> obj.key is KProperty<*> && (obj.key as KProperty<*>).hasAnnotation<IgnoreProperty>()
-        else -> false
-    }
+//used in ForceJsonString so that it only converts to JsonString if the return type is in the when structure
+fun allowedReturnType(p: KProperty<*>):Boolean =
+     when(p.returnType.classifier){
+        Int::class ->  true
+        Boolean::class ->  true
+        else ->  false
 }
-
