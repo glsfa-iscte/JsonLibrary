@@ -207,4 +207,18 @@ class TestFullExample {
         val st = Student(92888, "Gustavo", true)
         assertEquals(JsonObject(), instanciateJson(st))
     }
+
+    @Test
+    fun testInstanciateJson04(){
+        data class Student(
+            @ForceJsonString
+            val number: Int,
+            val name: String,
+            @ForceJsonString
+            val cool: Boolean
+        )
+
+        val st = Student(92888, "Gustavo", true)
+        assertEquals(JsonObject(mapOf("number" to JsonString("number"), "name" to JsonString("Gustavo"), "cool" to JsonString("true"))), instanciateJson(st))
+    }
 }

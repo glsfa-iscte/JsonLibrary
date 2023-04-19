@@ -99,44 +99,33 @@ data class JsonArray(
 
 val KClass<*>.dataClassFields: List<KProperty<*>>
     get() {
-        /*println(this.hasAnnotation<IgnoreProperty>())
-        declaredMemberProperties.forEach {
-            println(it)
-            println(it.hasAnnotation<IgnoreProperty>())
-            if(hasIgnorePropertyAnnotation(it))
-                println("FOUND IT")
-        }
-         */
         require(isData) { "instance must be data class" }
-        return if(hasIgnorePropertyAnnotation(this)) emptyList()
-        else {
-            primaryConstructor!!.parameters.map { p ->
-                declaredMemberProperties.find { it.name == p.name }!!
-            }.filterNot { hasIgnorePropertyAnnotation(it) }
+        return primaryConstructor!!.parameters.map { p ->
+            declaredMemberProperties.find { it.name == p.name }!!
+
         }
     }
 
-
+//TODO ADICIONAR UMA FUNCAO QUE VAI FAZER WHEN COM A ANOTACAO
 fun instanciateJson(obj : Any?):JsonValue{
-        when (obj) {
-            is String -> return JsonString(obj)
-            is Number -> return JsonNumber(obj)
-            is Boolean -> return JsonBoolean(obj)
-            null -> return JsonNull()
-            is Map<*, *> -> return JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) })
-            is Collection<*> -> return JsonArray(obj.map { instanciateJson(it) })
-            is Enum<*> -> return instanciateJson(obj)
-        }
-        if (obj!!::class.isData) {
-            val propertyList = obj::class.dataClassFields
-            return if (propertyList.isEmpty())
-                JsonObject()
-            else {
-                return JsonObject(
-                    propertyList.associate { it.name to instanciateJson(it.call(obj)) }
-                )
-            }
-        }
+    when (obj) {
+        is String -> return JsonString(obj)
+        is Number -> return JsonNumber(obj)
+        is Boolean -> return JsonBoolean(obj)
+        null -> return JsonNull()
+        is Map<*, *> -> return JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) })
+        is Collection<*> -> return JsonArray(obj.map { instanciateJson(it) })
+        is Enum<*> -> return instanciateJson(obj)
+    }
+    //Preciso de adicionar uma maneira para, caso tenha uma anotacao, ele fazer esse comportamento
+    if (obj!!::class.isData && !hasIgnorePropertyAnnotation(obj::class)) {
+        val propertyList = obj::class.dataClassFields
+        return JsonObject(
+            //posso fazer o filter do propertyList, que vai dar KProperty
+            propertyList.filter{!hasIgnorePropertyAnnotation(it)}.associate { it.name to instanciateJson(it.call(obj)) }
+        )
+
+    }
     return JsonObject()
 }
 
@@ -151,6 +140,9 @@ fun instanciateJson(obj : Any?):JsonValue{
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.CLASS)
 annotation class IgnoreProperty
 
+@Target(AnnotationTarget.PROPERTY)
+annotation class ForceJsonString
+
 fun hasIgnorePropertyAnnotation(obj: Any?) : Boolean {
     return when(obj){
         is KClass<*> -> obj.hasAnnotation<IgnoreProperty>()
@@ -159,3 +151,4 @@ fun hasIgnorePropertyAnnotation(obj: Any?) : Boolean {
         else -> false
     }
 }
+
