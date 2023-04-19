@@ -1,0 +1,1127 @@
+Collection:
+
+    A collection is a group of objects or values.
+    Collections can be mutable or immutable.
+    Examples of collections include lists, sets, and queues.
+    Collections can be indexed, meaning the elements can be accessed by their position.
+
+Enumeration:
+
+    An enumeration is a type that represents a set of named values.
+    Each named value is an instance of the enumeration type.
+    Enumerations can be used to define a set of related values.
+    Examples of enumerations include days of the week, months of the year, and states of a process.
+
+Map:
+
+    A map is a collection of key-value pairs.
+    Each key in the map is unique and maps to a corresponding value.
+    Maps can be mutable or immutable.
+    Examples of maps include dictionaries, hash tables, and associative arrays.
+
+
+
+Here are the differences between using a class, a data class, or an object to extend an
+ interface in Kotlin:
+
+    Class:
+     A class in Kotlin can implement an interface by adding the interface
+     name after the class name and implementing the interface's methods.
+     When implementing an interface with a class, you can also include
+     additional properties and methods that are specific to that class.
+
+    Data class:
+    A data class is a special type of class that is optimized for use
+    as a data holder. When a data class implements an interface, it must
+    provide implementations for all of the interface's methods. However,
+    you cannot add additional properties or methods to a data class that
+    implements an interface.
+
+    Object:
+     An object in Kotlin is a special type of class that is used to create
+     a singleton instance of a class. When an object implements an interface,
+     it must provide implementations for all of the interface's methods.
+     You cannot add additional properties or methods to an object that
+     implements an interface.
+
+    In summary, classes and data classes can be used to implement interfaces and provide additional
+     functionality beyond the interface, while objects are used to create a single instance of a class
+     and cannot include additional properties or methods beyond those required by the interface.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+11/04 aque estava a usar uma classe abstrata e a fazer override em todos, no entanto, sinto que não seja a melhor opçao
+ ja que posso fazer o codigo mais consiso e alem disso mais claro e facil de manter pelo que vou fazer semlhante ao
+ fileComposite, das aulas e criar uma propriedade calculada, semelhante à to text
+
+
+sealed interface JsonProperty{
+    val name: String
+    val value: Any?
+    fun toJsonString():String
+}
+data class JsonString(override val name: String, override val value:String): JsonProperty{
+    override fun toJsonString(): String {
+        return "\"$name\" : \"$value\""
+    }
+}
+data class JsonNumber(override val name: String, override val value:Number): JsonProperty{
+    override fun toJsonString(): String {
+        return "\"$name\" : $value"
+    }
+}
+data class JsonBoolean(override val name: String, override val value:Boolean): JsonProperty{
+    override fun toJsonString(): String {
+        return "\"$name\" : $value"
+    }
+}
+data class JsonNull(override val name: String, override val value: Any? = null): JsonProperty{
+    override fun toJsonString(): String {
+        return "\"$name\" : $value"
+    }
+}
+
+data class JsonObject(val properties: List<JsonProperty>): JsonProperty{
+    override val name = ""
+    override val value = null
+
+    override fun toJsonString(): String {
+        return properties.joinToString(separator = ",\n", prefix = "{\n", postfix = "\n}") { it.toJsonString() }
+    }
+}
+
+data class JsonArray(val properties: List<JsonProperty>): JsonProperty{
+    override val name = ""
+    override val value = null
+
+    override fun toJsonString(): String {
+        return "[${properties.joinToString(",")}]"
+    }
+}
+
+
+----
+sealed interface JsonProperty {
+    val name: String
+    val value: Any?
+
+    val json: String
+        get() = "\"$name\" : ${toJsonValue()}"
+
+    private fun toJsonValue(): String {
+        return when (value) {
+            is String -> "\"$value\""
+            is Number -> value.toString()
+            is Boolean -> value.toString()
+            is JsonProperty -> value.json
+            is List<*> -> value.joinToString(",", "[", "]") { toJsonValue(it) }
+            null -> "null"
+            else -> throw IllegalArgumentException("Invalid JSON value type")
+        }
+    }
+
+    private fun toJsonValue(value: Any?): String {
+        return when (value) {
+            is String -> "\"$value\""
+            is Number -> value.toString()
+            is Boolean -> value.toString()
+            is JsonProperty -> value.json
+            is List<*> -> value.joinToString(",", "[", "]") { toJsonValue(it) }
+            null -> "null"
+            else -> throw IllegalArgumentException("Invalid JSON value type")
+        }
+    }
+}
+
+data class JsonString(override val name: String, override val value: String) : JsonProperty
+
+data class JsonNumber(override val name: String, override val value: Number) : JsonProperty
+
+data class JsonBoolean(override val name: String, override val value: Boolean) : JsonProperty
+
+data class JsonNull(override val name: String, override val value: Any? = null) : JsonProperty
+
+data class JsonObject(override val name: String, override val properties: List<JsonProperty>) : JsonProperty {
+
+    override val json: String
+        get() = "{${properties.joinToString(",") { it.json }}}"
+
+}
+
+data class JsonArray(override val name: String, override val properties: List<JsonProperty>) : JsonProperty {
+
+    override val json: String
+        get() = "[${properties.joinToString(",") { it.json }}]"
+
+}
+
+-------------------------------------------------------------------------------------------------
+Changin the property interface so that it only represents the value, not the object, like it is now
+I think i mixed the concepts of value and object, and instead of returning a value im always returning an object of a given value
+
+sealed interface JsonProperty{
+    val name: String
+    val value: Any?
+    val parent: JsonStructure?
+    val depth: Int
+        get() = if(parent == null) 1 else 1 + (parent?.depth ?: 0)
+    val toJsonString: String
+        get() = "\t".repeat(depth)+"\"${name}\""
+}
+
+sealed interface JsonStructure : JsonProperty {
+    val children: MutableList<JsonProperty>
+        get() = mutableListOf<JsonProperty>()
+}
+
+data class JsonString(
+    override val name: String,
+    override val value: String,
+    override val parent: JsonStructure? = null
+) : JsonProperty {
+    init {
+        parent?.children?.add(this)
+    }
+    override val toJsonString: String
+        get(){
+        return "${super.toJsonString} : \"$value\""
+    }
+}
+
+data class JsonNumber(
+    override val name: String,
+    override val value: Number,
+    override val parent: JsonStructure? = null
+) : JsonProperty {
+    init {
+        parent?.children?.add(this)
+    }
+    override val toJsonString: String
+        get(){
+        return "${super.toJsonString} : $value"
+    }
+}
+
+data class JsonBoolean(
+    override val name: String,
+    override val value: Boolean,
+    override val parent: JsonStructure? = null
+) : JsonProperty {
+    init {
+        parent?.children?.add(this)
+    }
+    override val toJsonString: String
+        get(){
+            return "${super.toJsonString} : $value"
+    }
+}
+
+data class JsonNull(
+    override val name: String,
+    override val value: Any? = null,
+    override val parent: JsonStructure? = null
+) : JsonProperty {
+    init {
+        parent?.children?.add(this)
+    }
+    override val toJsonString: String
+        get(){
+            return "${super.toJsonString} : $value"
+    }
+}
+
+data class JsonObject(
+    val properties: List<JsonProperty>,
+    override val parent: JsonStructure? = null
+) : JsonStructure {
+    override val name = ""
+    override val value = null
+
+    init {
+        parent?.children?.add(this)
+    }
+
+    override val toJsonString: String
+        get(){
+            return properties.joinToString(
+                separator = ",\n",
+                prefix = "{\n",
+                postfix = "\n}"
+            ) { it.toJsonString }
+    }
+}
+
+data class JsonArray(
+    val properties: List<JsonProperty>,
+    override val parent: JsonStructure? = null
+) : JsonStructure {
+    override val name = ""
+    override val value = null
+
+    init {
+        parent?.children?.add(this)
+    }
+
+    override val toJsonString: String
+        get(){
+            return properties.joinToString(
+                separator = ",\n",
+                prefix = "[\n",
+                postfix = "\n]"
+            ) { it.toJsonString }
+    }
+}
+
+
+//Corresponding Tests
+
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+class Tests {
+    val numero = JsonNumber("numero", 101101)
+    val nome = JsonString("nome", "Dave Farley")
+    val internacional = JsonBoolean("internacional", true)
+    val jsonObj = listOf<JsonValue>(numero, nome, internacional)
+    val expectedObjectWithTabs =
+            "{\n" +
+                "\t\"numero\" : 101101,\n" +
+                "\t\"nome\" : \"Dave Farley\",\n" +
+                "\t\"internacional\" : true\n" +
+            "}"
+
+    @Test
+    fun testJsonString(){
+        assertEquals("\"uc\" : \"PA\"", JsonString("uc", "PA").toJsonString)
+    }
+    @Test
+    fun testJsonNumber(){
+        assertEquals("\"numero\" : 26503", JsonNumber("numero", 26503).toJsonString)
+    }
+    @Test
+    fun testJsonBoolean(){
+        assertEquals("\"internacional\" : false", JsonBoolean("internacional", false).toJsonString)
+    }
+    @Test
+    fun testJsonNull(){
+        assertEquals("\"data-exame\" : null", JsonNull("data-exame").toJsonString)
+    }
+
+    @Test
+    fun testJsonObject(){
+
+        assertEquals( expectedObjectWithTabs, JsonObject(jsonObj).toJsonString)
+    }
+
+    @Test
+    fun testJsonObjectDepth(){
+        assertEquals(1, JsonObject(jsonObj).depth)
+    }
+    /*
+    @Test
+    fun testJsonArray(){
+        assertEquals( , JsonArray().toJsonString())
+    }
+     */
+
+}
+------------------
+Changing the depth from init to a method of its own, so that it can be called once you invoque the tostring
+
+sealed interface JsonValue {
+    val toJsonString: String
+}
+
+sealed interface JsonStructure : JsonValue {
+    val parent: JsonStructure?
+    val depth: Int
+        get() = if (parent == null) 1 else 1 + (parent?.depth ?: 0)
+    val children: MutableList<JsonValue>
+        get() = mutableListOf()
+
+    override val toJsonString: String
+        get() = ""
+}
+
+data class JsonString(
+    val value: String,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " \"$value\" "
+}
+
+data class JsonNumber(
+    val value: Number,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+}
+
+data class JsonBoolean(
+    val value: Boolean,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+}
+
+data class JsonNull(
+    val value: Any? = null,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " null "
+}
+
+data class NameValuePair(val name: String, val value: JsonValue)
+
+data class JsonObject(
+    val nameValueSet: Set<NameValuePair>? = null,
+    override val parent: JsonStructure? = null,
+) : JsonStructure {
+
+    init {
+        parent?.children?.add(this)
+    }
+
+    override val toJsonString: String
+        get() {
+            return nameValueSet?.joinToString(
+                separator = ",\n",
+                prefix = "${"\t".repeat(depth-1)}{\n",
+                postfix = "\n${"\t".repeat(depth-1)}}"
+            ) { (name, value) -> "${"\t".repeat(depth)} \"$name\" :${value.toJsonString.trimEnd()} " } ?: "{ }"
+        }
+}
+
+data class JsonArray(
+    val valueList: List<JsonValue>? = null,
+    override val parent: JsonStructure? = null,
+) : JsonStructure {
+
+    init {
+        parent?.children?.add(this)
+    }
+
+    override val toJsonString: String
+        get() {
+            return valueList?.joinToString(
+                separator = ",\n",
+                prefix = "[\n",
+                postfix = "\n]",
+            ) { it.toJsonString } ?: "[ ]"
+        }
+}
+
+//TODO Depth not working so both obj and array still wont indent correctly
+
+-----------------------------------------------
+Latest
+sealed interface JsonValue {
+    val toJsonString: String
+    abstract fun accept(visitor: Visitor)
+}
+
+sealed interface JsonStructure : JsonValue {
+    val parent: Boolean?
+    var depth: Int
+    override val toJsonString: String
+        get() = ""
+}
+
+data class JsonString(
+    val value: String,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " \"$value\" "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNumber(
+    val value: Number,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonBoolean(
+    val value: Boolean,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNull(
+    val value: Any? = null,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " null "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class NameValuePair(val name: String, val value: JsonValue)
+
+data class JsonObject(
+    val nameValueSet: Set<NameValuePair>? = null,
+    override val parent: Boolean? = true,
+) : JsonStructure {
+    override var depth: Int = 1
+    init {
+        nameValueSet?.forEach {
+            if(it.value is JsonStructure)
+                it.value.depth = this.depth+1
+        }
+    }
+
+    override val toJsonString: String
+        get() {
+            return nameValueSet?.joinToString(
+                separator = ",\n",
+                prefix = "${"\t".repeat(depth-1)}{\n",
+                postfix = "\n${"\t".repeat(depth-1)}}"
+            ) { (name, value) -> "${"\t".repeat(depth)} \"$name\" :${value.toJsonString.trimEnd()} " } ?: "{ }"
+        }
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonArray(
+    val valueList: List<JsonValue>? = null,
+    override val parent: Boolean? = true,
+) : JsonStructure {
+
+    override var depth: Int = 1
+    init {
+        valueList?.forEach {
+            if(it is JsonStructure)
+                it.depth = this.depth+1
+        }
+    }
+
+    override val toJsonString: String
+        get() {
+            return valueList?.joinToString(
+                separator = ",\n",
+                prefix = " [\n",
+                postfix = "\n${" ".repeat(depth)}]",
+            ) { it.toJsonString } ?: "[ ]"
+        }
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+
+corresponding tests
+
+
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+class TestFullExample {
+
+    val inscricoesString: String =
+            "{\n" +
+            "  \"uc\" : \"PA\",\n" +
+            "  \"ects\" : 6.0,\n" +
+            "  \"data-exame\" : null,\n" +
+            "  \"inscritos\" : [\n" +
+            "    {\n" +
+            "      \"numero\" : 101101,\n" +
+            "      \"nome\" : \"Dave Farley\",\n" +
+            "      \"internacional\" : true\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"numero\" : 101102,\n" +
+            "      \"nome\" : \"Martin Fowler\",\n" +
+            "      \"internacional\" : true\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"numero\" : 92888,\n" +
+            "      \"nome\" : \"Gustavo Ferreira\",\n" +
+            "      \"internacional\" : false\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}"
+    val insc01=JsonObject(setOf(NameValuePair("numero", JsonNumber(101101)),
+        NameValuePair("nome", JsonString("Dave Farley")),
+        NameValuePair("internacional", JsonBoolean(true))
+    )
+    )
+
+    val insc02=JsonObject(setOf(NameValuePair("numero", JsonNumber(101102)),
+        NameValuePair("nome", JsonString("Martin Fowler")),
+        NameValuePair("internacional", JsonBoolean(true))
+    )
+    )
+
+    val insc03=JsonObject(setOf(NameValuePair("numero", JsonNumber(92888)),
+        NameValuePair("nome", JsonString("Gustavo Ferreira")),
+        NameValuePair("internacional", JsonBoolean(false))
+    )
+    )
+
+    val inscricoes: JsonObject = JsonObject(setOf(
+        NameValuePair("uc", JsonString("PA")),
+        NameValuePair("ects", JsonNumber(6.0)),
+        NameValuePair("data-exame", JsonNull()),
+        NameValuePair("inscritos", JsonArray(listOf(insc01, insc02, insc03)))
+        )
+    )
+
+    @Test
+    fun testFullExample(){
+        assertEquals(inscricoesString, inscricoes.toJsonString)
+    }
+
+    @Test
+    fun testDepth(){
+       // assertEquals(2, inscricoes.depth)
+    }
+    @Test
+    fun testChildren(){
+        println("Children: ")
+        //inscricoes.children.forEach { println(it) }
+
+    }
+}
+
+//
+This may have been interesting but for now, lets leave it for now, the idea was to add children in a way, similar to the one develeped on the classes
+
+sealed interface JsonValue {
+    val toJsonString: String
+    val parent: JsonStructure?
+    val depth: Int
+        get() = if(parent == null) 1 else 1 + (parent?.depth ?: 0)
+    abstract fun accept(visitor: Visitor)
+}
+
+sealed interface JsonStructure : JsonValue {
+    val children: List<JsonValue>
+}
+
+
+data class JsonString( val value: String, override val parent: JsonStructure? ) : JsonValue {
+    override val toJsonString: String
+        get() = " \"$value\" "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNumber( val value: Number, override val parent: JsonStructure?) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonBoolean( val value: Boolean, override val parent: JsonStructure?) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNull( val value: Any? = null, override val parent: JsonStructure?) : JsonValue {
+    override val toJsonString: String
+        get() = " null "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class NameValuePair(val name: String, val value: JsonValue, override val parent: JsonStructure?) : JsonStructure {
+    }
+}
+
+data class JsonObject( override val parent: JsonStructure? ) : JsonStructure {
+    val children = mutableSetOf<NameValuePair>()
+
+    init {
+        parent?.children?.add(this)
+    }
+
+    override val toJsonString: String
+        get() {
+            return children?.joinToString(
+                separator = ",\n",
+                prefix = "${"\t".repeat(depth-1)}{\n",
+                postfix = "\n${"\t".repeat(depth-1)}}"
+            ) { (name, value) -> "${"\t".repeat(depth)} \"$name\" :${value.toJsonString.trimEnd()} " } ?: "{ }"
+        }
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonArray( override val parent: JsonStructure? ) : JsonStructure {
+    internal val children = mutableListOf<JsonValue>()
+    override var depth: Int = 1
+    init {
+        parent?.children?.add(this)
+        }
+    }
+
+    override val toJsonString: String
+        get() {
+            return valueList?.joinToString(
+                separator = ",\n",
+                prefix = " [\n",
+                postfix = "\n${" ".repeat(depth)}]",
+            ) { it.toJsonString } ?: "[ ]"
+        }
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sealed interface JsonValue {
+    val toJsonString: String
+    abstract fun accept(visitor: Visitor)
+}
+
+sealed interface JsonStructure : JsonValue {
+    val parent: Boolean?
+    var depth: Int
+    override val toJsonString: String
+        get() = ""
+}
+
+data class JsonString(
+    val value: String,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " \"$value\" "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNumber(
+    val value: Number,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonBoolean(
+    val value: Boolean,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNull(
+    val value: Any? = null,
+) : JsonValue {
+    override val toJsonString: String
+        get() = " null "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class NameValuePair(val name: String, val value: JsonValue)
+
+data class JsonObject(
+    val nameValueSet: Set<NameValuePair>? = null,
+    override val parent: Boolean? = true,
+) : JsonStructure {
+    override var depth: Int = 1
+    init {
+        nameValueSet?.forEach {
+            if(it.value is JsonStructure)
+                it.value.depth = this.depth+1
+        }
+    }
+
+    override val toJsonString: String
+        get() {
+            return nameValueSet?.joinToString(
+                separator = ",\n",
+                prefix = "${"\t".repeat(depth-1)}{\n",
+                postfix = "\n${"\t".repeat(depth-1)}}"
+            ) { (name, value) -> "${"\t".repeat(depth)} \"$name\" :${value.toJsonString.trimEnd()} " } ?: "{ }"
+        }
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonArray(
+    val valueList: List<JsonValue>? = null,
+    override val parent: Boolean? = true,
+) : JsonStructure {
+
+    override var depth: Int = 1
+    init {
+        valueList?.forEach {
+            if(it is JsonStructure)
+                it.depth = this.depth+1
+        }
+    }
+
+    override val toJsonString: String
+        get() {
+            return valueList?.joinToString(
+                separator = ",\n",
+                prefix = " [\n",
+                postfix = "\n${" ".repeat(depth)}]",
+            ) { it.toJsonString } ?: "[ ]"
+        }
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+
+-------------------------------------------
+Stil not working
+Eu gostaria de ter a possibilidade de definir a depth de forma dinamica e alem disso, ter maneira de adicionar elementos, conforme foi feito no fileDirectoryCOmposite
+sealed interface JsonValue {
+    val toJsonString: String
+    val parent: JsonStructure?
+    val depth: Int
+        get() = if(parent == null) 1 else 1 + (parent?.depth ?: 0)
+    abstract fun accept(visitor: Visitor)
+}
+
+sealed interface JsonStructure : JsonValue {
+    val children: mutableList<JsonValue>
+}
+
+data class JsonString(val value: String, override val parent: JsonStructure?) : JsonValue {
+    override val toJsonString: String
+        get() = " \"$value\" "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNumber( val value: Number, override val parent: JsonStructure?) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonBoolean( val value: Boolean, override val parent: JsonStructure? ) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNull( val value: Any? = null, override val parent: JsonStructure? ) : JsonValue {
+    override val toJsonString: String
+        get() = " null "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+
+abstract class NameValuePair(val name: String, val value: JsonValue, override val parent: JsonStructure?): JsonValue
+
+data class JsonObject(override val parent: JsonStructure?) : JsonStructure {
+
+    init {
+        parent?.children.add(this)
+    }
+
+    override val toJsonString: String
+        get() {
+            return children.joinToString(
+                separator = ",\n",
+                prefix = "${"\t".repeat(depth-1)}{\n",
+                postfix = "\n${"\t".repeat(depth-1)}}"
+            ) { (name, value) -> "${"\t".repeat(depth)} \"$name\" :${value.toJsonString.trimEnd()} " }
+        }
+
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonArray(override val parent: JsonStructure?) : JsonStructure {
+    init {
+        parent?.children?.add(this)
+    }
+
+    override val toJsonString: String
+        get() {
+            return children.joinToString(
+                separator = ",\n",
+                prefix = " [\n",
+                postfix = "\n${" ".repeat(depth)}]",
+            ) { it.toJsonString }
+        }
+
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+--------------------------------------------------------------------
+same issue as before, not being able to access the values properly
+
+sealed interface JsonValue {
+    val toJsonString: String
+    val parent: JsonStructure?
+    val depth: Int
+        get() = if(parent == null) 1 else 1 + (parent?.depth ?: 0)
+    abstract fun accept(visitor: Visitor)
+}
+
+sealed interface JsonStructure : JsonValue {
+
+    override val toJsonString: String
+        get() = ""
+}
+
+data class JsonString(val value: String, override val parent: JsonArray? = null) : JsonValue {
+    override val toJsonString: String
+        get() = " \"$value\" "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNumber(val value: Number, override val parent: JsonArray? = null) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonBoolean(val value: Boolean, override val parent: JsonArray? = null) : JsonValue {
+    override val toJsonString: String
+        get() = " $value "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonNull(val value: Any? = null, override val parent: JsonArray? = null) : JsonValue {
+    override val toJsonString: String
+        get() = " null "
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class NameValuePair(val parent: JsonStructure, val name: String? = null, val JsonValue: JsonValue? = null, val JsonStructureValue: JsonStructure? = null){
+    init {
+            if (parent  is JsonObject)
+                parent.nameValueSet.add(this)
+            if (parent is JsonArray)
+                parent.valueList.add(this)
+    }
+}
+
+data class JsonObject(override val parent: JsonStructure? = null) : JsonStructure {
+    internal val nameValueSet = mutableSetOf<NameValuePair>()
+    /*override var depth: Int = 1
+    init {
+        parent is JsonObject
+        nameValueSet?.forEach {
+            if(it.value is JsonStructure)
+                it.value.depth = this.depth+1
+        }
+    }
+
+     */
+
+    override val toJsonString: String
+        get() {
+            return nameValueSet?.joinToString(
+                separator = ",\n",
+                prefix = "${"\t".repeat(depth-1)}{\n",
+                postfix = "\n${"\t".repeat(depth-1)}}"
+            ) { (name, value) -> "${"\t".repeat(depth)} \"$name\" :${value.toJsonString.trimEnd()} " } ?: "{ }"
+        }
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+data class JsonArray(override val parent: JsonStructure? = null) : JsonStructure {
+    internal val valueList = mutableListOf<NameValuePair>()
+    /*override var depth: Int = 1
+    init {
+        valueList?.forEach {
+            if(it is JsonStructure)
+                it.depth = this.depth+1
+        }
+    }
+
+     */
+
+    override val toJsonString: String
+        get() {
+            return valueList?.joinToString(
+                separator = ",\n",
+                prefix = " [\n",
+                postfix = "\n${" ".repeat(depth)}]",
+            ) { it.toJsonString } ?: "[ ]"
+        }
+    override fun accept(visitor: Visitor) {
+        visitor.visit(this)
+    }
+}
+
+Corresponding testFull
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+class TestFullExample {
+
+    val inscricoesString: String =
+            "{\n" +
+            "  \"uc\" : \"PA\",\n" +
+            "  \"ects\" : 6.0,\n" +
+            "  \"data-exame\" : null,\n" +
+            "  \"inscritos\" : [\n" +
+            "    {\n" +
+            "      \"numero\" : 101101,\n" +
+            "      \"nome\" : \"Dave Farley\",\n" +
+            "      \"internacional\" : true\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"numero\" : 101102,\n" +
+            "      \"nome\" : \"Martin Fowler\",\n" +
+            "      \"internacional\" : true\n" +
+            "    },\n" +
+            "    {\n" +
+            "      \"numero\" : 92888,\n" +
+            "      \"nome\" : \"Gustavo Ferreira\",\n" +
+            "      \"internacional\" : false\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}"
+    /*
+    val insc01=JsonObject(setOf(NameValuePair("numero", JsonNumber(101101)),
+        NameValuePair("nome", JsonString("Dave Farley")),
+        NameValuePair("internacional", JsonBoolean(true))
+    )
+    )
+
+    val insc02=JsonObject(setOf(NameValuePair("numero", JsonNumber(101102)),
+        NameValuePair("nome", JsonString("Martin Fowler")),
+        NameValuePair("internacional", JsonBoolean(true))
+    )
+    )
+
+    val insc03=JsonObject(setOf(NameValuePair("numero", JsonNumber(92888)),
+        NameValuePair("nome", JsonString("Gustavo Ferreira")),
+        NameValuePair("internacional", JsonBoolean(false))
+    )
+    )
+
+    val inscricoes: JsonObject = JsonObject(setOf(
+        NameValuePair("uc", JsonString("PA")),
+        NameValuePair("ects", JsonNumber(6.0)),
+        NameValuePair("data-exame", JsonNull()),
+        NameValuePair("inscritos", JsonArray(listOf(insc01, insc02, insc03)))
+        )
+    )
+
+    @Test
+    fun testFullExample(){
+        assertEquals(inscricoesString, inscricoes.toJsonString)
+    }
+
+    @Test
+    fun testDepth(){
+       // assertEquals(2, inscricoes.depth)
+    }
+    @Test
+    fun testChildren(){
+        println("Children: ")
+        //inscricoes.children.forEach { println(it) }
+
+    }
+
+     */
+
+    val inscricoes = JsonObject()
+        val uc = NameValuePair(inscricoes,"uc", JsonString("PA"))
+        val ect = NameValuePair(inscricoes,"ects", JsonNumber(6.0))
+        val data = NameValuePair(inscricoes,"data-exame", JsonNull())
+        val inscritos = NameValuePair(inscricoes,"inscritos", JsonArray())
+
+            val x1 = NameValuePair(inscritos.JsonStructureValue!!, "numero", JsonNumber(101101))
+            val x2 = NameValuePair(inscritos.JsonStructureValue!!,"nome", JsonString("Dave Farley"))
+            val x3 = NameValuePair(inscritos.JsonStructureValue!!,"internacional", JsonBoolean(true))
+    @Test
+    fun test(){
+        println(inscricoes.toJsonString)
+    }
+
+}
