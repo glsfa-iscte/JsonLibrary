@@ -2,6 +2,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.*
 
+//TODO CHECK LAST CLASS AND APPLY THE CONCEPTS TO THIS PROJECT
 sealed interface JsonValue {
     val toJsonString: String
 }
@@ -117,6 +118,7 @@ fun instanciateJson(obj : Any?):JsonValue {
         is Collection<*> -> JsonArray(obj.map { instanciateJson(it) })
         is Enum<*> -> instanciateJson(obj)
         else -> {
+
             if (obj::class.isData) {
                 val propertyList = obj::class.dataClassFields
                 return JsonObject(
@@ -126,7 +128,12 @@ fun instanciateJson(obj : Any?):JsonValue {
                         if (it.hasAnnotation<ForceJsonString>() && allowedReturnType(it))
                             it.name to instanciateJson(value.toString())
                         else
-                            it.name to instanciateJson(value)
+                            if(it.hasAnnotation<CustomIdentifier>()){
+                                val newType = it.findAnnotation<CustomIdentifier>()!!.newType
+                                it.name to instanciateJson(changeReturnType(value, newType))
+                            }
+                        else
+                                it.name to instanciateJson(value)
                     }
                 )
 
@@ -141,6 +148,8 @@ annotation class IgnoreProperty
 
 @Target(AnnotationTarget.PROPERTY)
 annotation class ForceJsonString
+@Target(AnnotationTarget.PROPERTY)
+annotation class CustomIdentifier(val newType: String)
 
 //used in ForceJsonString so that it only converts to JsonString if the return type is in the wen structure
 fun allowedReturnType(p: KProperty<*>):Boolean =
@@ -148,4 +157,13 @@ fun allowedReturnType(p: KProperty<*>):Boolean =
         Int::class ->  true
         Boolean::class ->  true
         else ->  false
+}
+
+fun changeReturnType(value: Any?, newType: String):Any{
+    return when(newType){
+        "string" -> value.toString()
+        "boolean" -> value.toString().toBoolean()
+        "int" -> value.toString().toInt()
+        else -> throw IllegalArgumentException("Unrecognized type, try: string, boolean, int")
+    }
 }
