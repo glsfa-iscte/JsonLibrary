@@ -38,6 +38,68 @@ class ModelTesting {
                 "\t]\n" +
                 "}"
 
+    private val fullExample02: String =
+                "{\n" +
+                "\t \"uc\" : \"PA\",\n" +
+                "\t \"ects\" : 6.0,\n" +
+                "\t \"data-exame\" : null,\n" +
+                "\t \"inscritos\" : [\n" +
+                "\t\t{\n" +
+                "\t\t\t \"numero\" : 101101,\n" +
+                "\t\t\t \"nome\" : \"Dave Farley\",\n" +
+                "\t\t\t \"internacional\" : true\n" +
+                "\t\t},\n" +
+                "\t\t{\n" +
+                "\t\t\t \"numero\" : 101102,\n" +
+                "\t\t\t \"nome\" : \"Martin Fowler\",\n" +
+                "\t\t\t \"internacional\" : true\n" +
+                "\t\t},\n" +
+                "\t\t{\n" +
+                "\t\t\t \"numero\" : 92888,\n" +
+                "\t\t\t \"nome\" : \"Gustavo Ferreira\",\n" +
+                "\t\t\t \"internacional\" : false,\n" +
+                "\t\t\t \"inscritos\" : [\n" +
+                "\t\t\t\t 26503 ,\n" +
+                "\t\t\t\t null ,\n" +
+                "\t\t\t\t{\n" +
+                "\t\t\t\t\t \"numero\" : 101102\n" +
+                "\t\t\t\t}\n" +
+                "\t\t\t]\n" +
+                "\t\t}\n" +
+                "\t]\n" +
+                "}"
+
+    private val fullExample03: String =
+        "{\n" +
+                "\t \"uc\" : \"PA\",\n" +
+                "\t \"ects\" : 6.0,\n" +
+                "\t \"data-exame\" : null,\n" +
+                "\t \"inscritos\" : [\n" +
+                "\t\t{\n" +
+                "\t\t\t \"numero\" : 101102,\n" +
+                "\t\t\t \"nome\" : \"Martin Fowler\",\n" +
+                "\t\t\t \"internacional\" : true\n" +
+                "\t\t},\n" +
+                "\t\t{\n" +
+                "\t\t\t \"numero\" : 92888,\n" +
+                "\t\t\t \"nome\" : \"Gustavo Ferreira\",\n" +
+                "\t\t\t \"internacional\" : false,\n" +
+                "\t\t\t \"inscritos\" : [\n" +
+                "\t\t\t\t 26503 ,\n" +
+                "\t\t\t\t null ,\n" +
+                "\t\t\t\t{\n" +
+                "\t\t\t\t\t \"numero\" : 101102,\n" +
+                "\t\t\t\t\t \"test\" : {\n" +
+                "\t\t\t\t\t\t \"emptyArray\" : [ ]\n" +
+                "\t\t\t\t\t},\n" +
+                "\t\t\t\t\t \"emptyObject\" : { }\n" +
+                "\t\t\t\t}\n" +
+                "\t\t\t]\n" +
+                "\t\t}\n" +
+                "\t]\n" +
+                "}"
+
+
     private val insc01 = JsonObject(mapOf(
         "numero" to JsonNumber(101101),
         "nome" to JsonString("Dave Farley"),
@@ -58,11 +120,59 @@ class ModelTesting {
 
     private val inscritos = JsonArray(listOf(insc01, insc02, insc03))
 
-    private val inscricoes = JsonObject(mapOf(
+    private val inscricoes01 = JsonObject(mapOf(
         "uc" to JsonString("PA"),
         "ects" to JsonNumber(6.0),
         "data-exame" to JsonNull(),
         "inscritos" to inscritos
+    ))
+
+
+    private val inscricoes02 = JsonObject(mapOf(
+        "uc" to JsonString("PA"),
+        "ects" to JsonNumber(6.0),
+        "data-exame" to JsonNull(),
+        "inscritos" to JsonArray(listOf(
+            insc01,
+            insc02,
+            JsonObject(mapOf(
+                "numero" to JsonNumber(92888),
+                "nome" to JsonString("Gustavo Ferreira"),
+                "internacional" to JsonBoolean(false),
+                "inscritos" to JsonArray(listOf(
+                    JsonNumber(26503),
+                    JsonNull(),
+                    JsonObject(mapOf(
+                        "numero" to JsonNumber(101102)
+                    ))
+                ))
+            ))
+        ))
+    ))
+
+    private val inscricoes03 = JsonObject(mapOf(
+        "uc" to JsonString("PA"),
+        "ects" to JsonNumber(6.0),
+        "data-exame" to JsonNull(),
+        "inscritos" to JsonArray(listOf(
+            insc02,
+            JsonObject(mapOf(
+                "numero" to JsonNumber(92888),
+                "nome" to JsonString("Gustavo Ferreira"),
+                "internacional" to JsonBoolean(false),
+                "inscritos" to JsonArray(listOf(
+                    JsonNumber(26503),
+                    JsonNull(),
+                    JsonObject(mapOf(
+                        "numero" to JsonNumber(101102),
+                        "test" to JsonObject(mapOf(
+                            "emptyArray" to JsonArray()
+                        )),
+                        "emptyObject" to JsonObject()
+                    ))
+                ))
+            ))
+        ))
     ))
 
     @Test
@@ -94,7 +204,7 @@ class ModelTesting {
 
     @Test
     fun testJsonObjectArray(){
-        assertEquals( "[\n true ,\n true ,\n false \n]", jsonArray.toJsonString)
+        assertEquals( "[\n\t true ,\n\t true ,\n\t false \n]", jsonArray.toJsonString)
     }
 
     @Test
@@ -106,9 +216,31 @@ class ModelTesting {
     fun testEmptyJsoArray(){
         assertEquals( "[ ]", JsonArray().toJsonString)
     }
+    @Test
+    fun testDepth01(){
+        assertEquals(1, inscricoes01.depth)
+    }
+    @Test
+    fun testDepth02(){
+        assertEquals(2, inscritos.depth)
+    }
+    @Test
+    fun testDepth03(){
+         assertEquals(3, insc01.depth)
+    }
 
     @Test
-    fun testFullExample(){
-        assertEquals(fullExample01, inscricoes.toJsonString)
+    fun testFullExample01(){
+        assertEquals(fullExample01, inscricoes01.toJsonString)
+    }
+
+    @Test
+    fun testFullExample02(){
+        assertEquals(fullExample02, inscricoes02.toJsonString)
+    }
+
+    @Test
+    fun testFullExample03(){
+        assertEquals(fullExample03, inscricoes03.toJsonString)
     }
 }

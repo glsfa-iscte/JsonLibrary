@@ -2,6 +2,7 @@
 TODO    Depth não está criada corretamente                      DONE
         É necessario ter maneira de serializar para ficheiro
         Adicionar mais testes do modelo (full examples)
+        Depth ainda tem erros ja que no array ele nao está a colocar \t nos elementos do Json array
  */
 /**
  * Json value - This interface represents a value in json, string in double quotes, or a number, or true or false or null, or an object or an array
@@ -93,7 +94,9 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
         get() {
             return properties?.entries?.joinToString(
                 separator = ",\n",
-                prefix = "${"\t".repeat(depth-1)}{\n",
+                // Removed to add "${"\t".repeat(depth)} in Json Array, so that Json Values are properly indented and so that Json Value doesnt have depth, causing every jsonValue to have init
+                //prefix = "${"\t".repeat(depth-1)}{\n",
+                prefix = "{\n",
                 postfix = "\n${"\t".repeat(depth-1)}}"
             ) { (name, value) ->
                 "${"\t".repeat(depth)} \"$name\" : ${value.toJsonString.trimStart().trimEnd()}"
@@ -126,7 +129,7 @@ data class JsonArray(val valueList: List<JsonValue>? = null) : JsonStructure {
                 separator = ",\n",
                 prefix = "[\n",
                 postfix = "\n${"\t".repeat(depth-1)}]",
-            ) { it.toJsonString } ?: "[ ]"
+            ) { "${"\t".repeat(depth)}${it.toJsonString}" } ?: "[ ]"
         }
     override fun accept(visitor: Visitor) {
         visitor.visit(this)
