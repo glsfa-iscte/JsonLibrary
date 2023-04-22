@@ -3,6 +3,8 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.*
 
 //TODO CHECK LAST CLASS AND APPLY THE CONCEPTS TO THIS PROJECT
+//SERIALIZAR PARA FICHEIROS
+/*
 sealed interface JsonValue {
     val toJsonString: String
 }
@@ -97,6 +99,8 @@ data class JsonArray(
         visitor.visit(this)
     }
 }
+
+ */
 
 val KClass<*>.dataClassFields: List<KProperty<*>>
     get() {

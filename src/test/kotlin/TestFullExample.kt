@@ -54,7 +54,6 @@ class TestFullExample {
         "inscritos" to inscritos
     ))
 
-
     @Test
     fun testFullExample(){
         assertEquals(inscricoesString, inscricoes.toJsonString)
