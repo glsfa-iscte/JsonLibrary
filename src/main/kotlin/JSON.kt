@@ -111,7 +111,7 @@ val KClass<*>.dataClassFields: List<KProperty<*>>
         }
     }
 
-//TODO ADICIONAR UMA FUNCAO QUE VAI FAZER WHEN COM A ANOTACAO
+//
 fun instanciateJson(obj : Any?):JsonValue {
     return when (obj) {
         is String -> JsonString(obj)

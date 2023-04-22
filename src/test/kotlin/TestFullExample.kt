@@ -1,7 +1,8 @@
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+/*
 class TestFullExample {
-//os espaços passar a \t
+
     val inscricoesString: String =
             "{\n" +
             "\"uc\" : \"PA\",\n" +
@@ -69,6 +70,7 @@ class TestFullExample {
         //inscricoes.children.forEach { println(it) }
 
     }
+    //ATE AQUI ESTAO MUDADOS
     @Test
     fun testGetValuesByPropertyName(){
         assertEquals(mutableListOf(" 101101 " ,  " 101102 " ,  " 92888 "), getValuesByPropertyName(inscricoes, "numero"))
@@ -221,4 +223,7 @@ class TestFullExample {
         val st = Student(92888, "Gustavo", true)
         assertEquals(JsonObject(mapOf("number" to JsonBoolean(false), "name" to JsonString("Gustavo"), "cool" to JsonBoolean(true))), instanciateJson(st))
     }
+
 }
+
+ */

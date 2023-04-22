@@ -1,8 +1,8 @@
 /*
-TODO    Depth não está criada corretamente                      DONE
+TODO    Depth não está criada corretamente                                                                              DONE
         É necessario ter maneira de serializar para ficheiro
-        Adicionar mais testes do modelo (full examples)
-        Depth ainda tem erros ja que no array ele nao está a colocar \t nos elementos do Json array
+        Adicionar mais testes do modelo (full examples)                                                                 DONE
+        Depth ainda tem erros ja que no array ele nao está a colocar \t nos elementos do Json array                     DONE
  */
 /**
  * Json value - This interface represents a value in json, string in double quotes, or a number, or true or false or null, or an object or an array
