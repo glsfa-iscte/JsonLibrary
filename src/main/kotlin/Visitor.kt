@@ -20,30 +20,19 @@ interface Visitor {
     fun visit(jsonElement: JsonArray)
 }
 
-/*
-TODO
-This file will contain all the operations on JsonElements
-efetuar pesquisas, como por exemplo:
-    obter todos os valores guardados em propriedades com identificador “numero”                                     DONE
-    obter todos os objetos que têm as propriedades numero e nome
-verificar que o modelo obedece a determinada estrutura, por exemplo:
-    a propriedade numero apenas tem como valores números inteiros
-    a propriedade inscritos consiste num array onde todos os objetos têm a mesma estutura
-
- */
 /**
  * Get values by property name visitor
  *
- * @property name
+ * @property name The name of the property to search for
  * @constructor Create new instance of the GetValuesByPropertyNameVisitor class with the given parameter
  */
 class GetValuesByPropertyNameVisitor(val name:String): Visitor{
-    var lst = mutableListOf<String>()
+    val lst = mutableListOf<String>()
 
     /**
      * Visit Visits a JsonObject and searches for a property, a name/value pair, with the given name. If a property is
-     * found, its value is added to the lst MutableList. If the property value is a JsonArray, this function calls the
-     * accept method on the JsonArrayIf the property value is a JsonArray, this function calls the accept method on the JsonArray
+     * found, its value is added to the lst MutableList. If the property value implements the interface JsonStructure, a JsonArray or a JsonObject, this function calls the
+     * corresponding "accept" method
      *
      * @param jsonElement The JsonObject to visit
      */
@@ -51,21 +40,18 @@ class GetValuesByPropertyNameVisitor(val name:String): Visitor{
         jsonElement.properties?.forEach {
             if(it.key == name)
                 lst.add(it.value.toJsonString)
-            if(it.value is JsonArray)
-                (it.value as JsonArray).accept(this)
+            if(it.value is JsonStructure) (it.value as JsonStructure).accept(this)
         }
     }
 
     /**
-     * Visit Visits a JsonArray and checks if each value in the array is a JsonObject. If a JsonObject is found,
-     * this function calls the accept method on the JsonObject
+     * Visit Visits a JsonArray and checks if each value in the array and calls the "accept" method if the value is a JsonStructure
      *
      * @param jsonElement The JsonArray to visit
      */
     override fun visit(jsonElement: JsonArray) {
         jsonElement.valueList?.forEach {
-            if(it is JsonObject)
-                it.accept(this)
+            if(it is JsonStructure) it.accept(this)
         }
     }
 }
@@ -84,7 +70,6 @@ fun getValuesByPropertyName(jsonElement: JsonStructure, name:String): MutableLis
     return visitor.lst
 }
 
-
 /**
  * Get object by properties names visitor
  *
@@ -93,50 +78,60 @@ fun getValuesByPropertyName(jsonElement: JsonStructure, name:String): MutableLis
  */
 
 class GetObjectByPropertiesNamesVisitor(val names: List<String>): Visitor{
-    var lst = mutableListOf<JsonObject>()
+    val lst = mutableListOf<JsonObject>()
 
     /**
-     * Visit Visits a JSON object and checks if it has all the required property names. If it does,
-     * it adds the object to the list. If any property value is an array or an object, it visits the array or object, respectively.
+     * Visit Visits a JsonObject and checks if it has all the specified property names. If it does,
+     * it adds itself to the list. If any property value is a JsonStructure, JsonArray or a JsonObject, the function
+     * calls its corresponding "accept" method.
      *
      * @param jsonElement The JsonObject to visit
      */
     override fun visit(jsonElement: JsonObject) {
-        if(jsonElement.properties?.keys?.containsAll(names) == true
-            //&& !jsonElement.properties.values.any { it is JsonArray }
-             )
+        if(jsonElement.properties?.keys?.containsAll(names) == true)
             lst.add(jsonElement)
-        if(jsonElement.properties?.values?.any { it is JsonArray } == true)
-            jsonElement.properties.values.filterIsInstance<JsonArray>().forEach {
-                it.accept(this)
-            }
-        if(jsonElement.properties?.values?.any { it is JsonObject } == true)
-            jsonElement.properties.values.filterIsInstance<JsonObject>().forEach {
-                it.accept(this)
-            }
+        jsonElement.properties?.forEach {
+            if(it.value is JsonStructure) (it.value as JsonStructure).accept(this)
         }
+    }
 
     /**
-     * Visit Visits a JSON array and calls accept on any contained JSON objects.
+     * Visit Visits a JSON array and calls accept on any contained JsonStructure.
      *
      * @param jsonElement The JsonArray to visit
      */
     override fun visit(jsonElement: JsonArray) {
         jsonElement.valueList?.forEach {
-            if(it is JsonObject) it.accept(this)
+            if(it is JsonStructure) it.accept(this)
         }
     }
 }
+
+/**
+ * Get objects with specific name value
+ *
+ * @param jsonElement  the JsonStructure to search for the property
+ * @param properties the list of property names to search for
+ * @return a mutable list of the objects found with the given properties
+ */
+fun getObjectsWithSpecificNameValue(jsonElement: JsonStructure, properties:List<String>): MutableList<JsonObject>{
+    val visitor = GetObjectByPropertiesNamesVisitor(properties)
+    jsonElement.accept(visitor)
+    return visitor.lst
+}
+//ATE AQUI ESTA FEITO E VERIFICADO
+
+/*
+TODO
+verificar que o modelo obedece a determinada estrutura, por exemplo:
+    a propriedade numero apenas tem como valores números inteiros
+    a propriedade inscritos consiste num array onde todos os objetos têm a mesma estutura
+ */
+
 //abaixo seria uma implementação explicitamente, mas no contexto da cadeira acho que faria mais sentido criar
 //higher order function para fazer isto
 // a propriedade numero apenas tem como valores números inteiros
 // a propriedade inscritos consiste num array onde todos os objetos têm a mesma estutura
-fun getObjectsWithSpecificNameValue(jsonElement: JsonStructure, name:List<String>): MutableList<JsonObject>{
-    val visitor = GetObjectByPropertiesNamesVisitor(name)
-    jsonElement.accept(visitor)
-    return visitor.lst
-}
-
 class ChekcIfModelPropertyObeysStructure(val name: String): Visitor{
     var obeysStructure: Boolean = true
     override fun visit(jsonElement: JsonObject) {
@@ -162,7 +157,9 @@ class JsonSearchVisitor(private val searchPredicate: (JsonObject) -> Boolean) : 
 
     override fun visit(jsonElement: JsonArray) {
         jsonElement.valueList?.forEach {
-            if(it is JsonObject) it.accept(this)
+            if(it is JsonStructure) it.accept(this)
+            else
+                if(it is JsonArray) it.accept(this)
         }
     }
 }

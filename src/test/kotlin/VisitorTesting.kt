@@ -19,6 +19,11 @@ class VisitorTesting {
     internal val x03a = JsonObject(mapOf(
         "notIt" to JsonBoolean(true),
         "x" to JsonNumber(1),
+        "y" to JsonString("Hi"),
+        "numero" to JsonNumber(10)
+    ))
+    internal val x03b = JsonObject(mapOf(
+        "x" to JsonNumber(2),
         "y" to JsonString("Hi")
     ))
     internal val x03 = JsonObject(mapOf(
@@ -26,7 +31,10 @@ class VisitorTesting {
         "nome" to JsonString("Who This"),
         "internacional" to JsonArray(listOf(
             JsonString("Me"),
-            x03a
+            x03a,
+            JsonArray(listOf(
+                x03b
+            ))
         ))
     ))
     @Test
@@ -44,7 +52,7 @@ class VisitorTesting {
 
     @Test
     fun testGetValuesByPropertyName04(){
-        assertEquals(mutableListOf(" true " ,  " 1 "), getValuesByPropertyName(inscricoes04, "x"))
+        assertEquals(mutableListOf(" true ", " true ",  " 1 ", " 2 "), getValuesByPropertyName(inscricoes04, "x"))
     }
     //good till here
 
@@ -54,16 +62,21 @@ class VisitorTesting {
     }
     @Test
     fun testGetObjectsWithSpecificNameValue02(){
-        assertEquals(listOf(x01a, x03a), getObjectsWithSpecificNameValue(inscricoes04, listOf<String>("x", "y")))
+        assertEquals(listOf(x01a, x03a, x03b), getObjectsWithSpecificNameValue(inscricoes04, listOf<String>("x", "y")))
     }
+    @Test
+    fun testGetObjectsWithSpecificNameValue03(){
+        assertEquals(listOf(x01a, x02, x03a, x03b), getObjectsWithSpecificNameValue(inscricoes04, listOf<String>("x")))
+    }
+    //ALL GOOD ABOVE
+
 
     //TODO
-    // FAZER OS RESTANTES TESTES PARA AS OUTRAS PESQUISAS
     // IMPLEMENTAR O ChekcIfModelPropertyObeysStructure
 
     @Test
     fun testJsonSearch01(){
-        val objectList = searchJson(inscricoes01) { (it.properties as? Map<String, JsonValue>)?.containsKey("numero") == true  }
+        val objectList = searchJson(inscricoes04) { it.properties?.containsKey("numero") == true  }
 
         assertEquals(
             mutableListOf(" 101101 " ,  " 101102 " ,  " 92888 "), objectList

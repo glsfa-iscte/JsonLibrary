@@ -211,7 +211,14 @@ internal val inscricoes04 = JsonObject(mapOf(
                 JsonObject(mapOf(
                     "notIt" to JsonBoolean(true),
                     "x" to JsonNumber(1),
-                    "y" to JsonString("Hi")
+                    "y" to JsonString("Hi"),
+                    "numero" to JsonNumber(10)
+                )),
+                JsonArray(listOf(
+                    JsonObject(mapOf(
+                        "x" to JsonNumber(2),
+                        "y" to JsonString("Hi")
+                    ))
                 ))
             ))
         ))
