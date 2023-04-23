@@ -68,22 +68,49 @@ class VisitorTesting {
     fun testGetObjectsWithSpecificNameValue03(){
         assertEquals(listOf(x01a, x02, x03a, x03b), getObjectsWithSpecificNameValue(inscricoes04, listOf<String>("x")))
     }
-    //ALL GOOD ABOVE
 
-
-    //TODO
-    // IMPLEMENTAR O ChekcIfModelPropertyObeysStructure
 
     @Test
-    fun testJsonSearch01(){
-        val objectList = searchJson(inscricoes04) { it.properties?.containsKey("numero") == true  }
+    fun testSearchJsonStructure01(){
+        val predicate = { jsonObject: JsonObject ->
+            jsonObject.properties?.containsKey("inscritos") == true && (jsonObject as JsonObject).properties!!.getValue("inscritos") is JsonArray
+        }
 
-        assertEquals(
-            mutableListOf(" 101101 " ,  " 101102 " ,  " 92888 "), objectList
+        val matchingObjects = searchJson(inscricoes01, predicate)
+        assertEquals(1, matchingObjects.size)
 
-        )
+        val inscritosArray = matchingObjects[0].properties!!.getValue("inscritos") as JsonArray
+        val inscritosStructureFirstElement = inscritosArray.valueList!![0].toString()
+        val pattern = "([^=,]+)=(Json[A-Za-z<]+)"
+
+        val firstElementStructure = getJsonPropertyTypes(inscritosStructureFirstElement, pattern)
+        println("FIRST ELEM: " + firstElementStructure)
+
+        (inscritosArray as JsonArray).valueList!!.drop(1).forEach { jsonObject ->
+            val properties = (jsonObject as JsonObject).properties!!.toString()
+            val elementStructure = getJsonPropertyTypes(properties, pattern)
+            println("OTHER ELEM: " + elementStructure)
+            assertEquals(firstElementStructure, elementStructure)
+        }
     }
-
+    @Test
+    fun testSearchJsonStructure02(){
+        val objectList = searchJson(inscritos) {
+                (it as JsonObject).properties!!.containsKey("numero")
+        }
+        val firstElement = objectList[0].properties!!.entries.filter { (name, value) -> name == "numero" && value is JsonNumber }.toString()
+        val pattern = "([^=,]+)=(Json[A-Za-z<]+)"
+        val firstElementStructure = getJsonPropertyTypes(firstElement, pattern)
+        objectList.drop(1).forEach { obj ->
+            val otherElement = obj.properties!!.entries.filter { (name, value) -> name == "numero" && value is JsonNumber  }.toString()
+            val elementStructure = getJsonPropertyTypes(otherElement, pattern)
+            assertEquals(firstElementStructure, elementStructure)
+        }
+    }
+    //ALL GOOD ABOVE
+    //TODO MORE TESTS FOR THE SECOND REQUIREMENT OF THE VISITORS
+    //FINNISH THE TESTS BELLOW
+    //more tests for the JsonSearch!! only have 2 above
     @Test
     fun testJsonSearch02(){
         assertEquals(
@@ -114,6 +141,7 @@ class VisitorTesting {
             listOf(insc01, insc02, insc03),
             searchJson(inscritos, inscritoPredicate)
         )
-
     }
+
+
 }

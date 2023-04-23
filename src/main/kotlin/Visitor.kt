@@ -123,10 +123,10 @@ fun getObjectsWithSpecificNameValue(jsonElement: JsonStructure, properties:List<
 
 /*
 TODO
-verificar que o modelo obedece a determinada estrutura, por exemplo:
-    a propriedade numero apenas tem como valores números inteiros
-    a propriedade inscritos consiste num array onde todos os objetos têm a mesma estutura
- */
+    verificar que o modelo obedece a determinada estrutura, por exemplo:
+        a propriedade numero apenas tem como valores números inteiros
+        a propriedade inscritos consiste num array onde todos os objetos têm a mesma estutura
+
 
 //abaixo seria uma implementação explicitamente, mas no contexto da cadeira acho que faria mais sentido criar
 //higher order function para fazer isto
@@ -135,34 +135,58 @@ verificar que o modelo obedece a determinada estrutura, por exemplo:
 class ChekcIfModelPropertyObeysStructure(val name: String): Visitor{
     var obeysStructure: Boolean = true
     override fun visit(jsonElement: JsonObject) {
-        TODO("Not yet implemented")
+        "Not yet implemented"
     }
 
     override fun visit(jsonElement: JsonArray) {
-        TODO("Not yet implemented")
+        "Not yet implemented"
     }
 }
-
+ */
+/**
+ * Json search visitor
+ *
+ * @property searchPredicate A lambda function that takes a JsonObject and returns a Boolean
+ * indicating whether the object matches the desired search criteria.
+ * @constructor Creates a new JsonSearchVisitor object with the given searchPredicate.
+ */
 class JsonSearchVisitor(private val searchPredicate: (JsonObject) -> Boolean) : Visitor {
     val matchingObjects = mutableListOf<JsonObject>()
+
+    /**
+     * Visit The visit method for a JsonObject
+     *
+     * @param jsonElement The JsonObject to visit
+     */
     override fun visit(jsonElement: JsonObject) {
         if(searchPredicate(jsonElement))
             matchingObjects.add(jsonElement)
         jsonElement.properties?.values?.forEach {
-            if(it is JsonObject) it.accept(this)
-            else
-                if(it is JsonArray) it.accept(this)
+            if(it is JsonStructure) it.accept(this)
         }
     }
 
+    /**
+     * Visit The visit method for a JsonArray
+     *
+     * @param jsonElement The jsonArray to visit
+     */
     override fun visit(jsonElement: JsonArray) {
         jsonElement.valueList?.forEach {
             if(it is JsonStructure) it.accept(this)
-            else
-                if(it is JsonArray) it.accept(this)
         }
     }
 }
+
+/**
+ * Search json
+ *
+ * @param jsonElement The JsonStructure to search through
+ * @param searchPredicate A lambda function that takes a JsonObject and returns a Boolean
+ * indicating whether the object matches the desired search criteria.
+ * @receiver
+ * @return A list of all the JsonObjects in jsonElement that match the search criteria.
+ */
 fun searchJson(jsonElement: JsonStructure, searchPredicate: (JsonObject) -> Boolean): List<JsonObject> {
     val visitor = JsonSearchVisitor(searchPredicate)
     jsonElement.accept(visitor)
