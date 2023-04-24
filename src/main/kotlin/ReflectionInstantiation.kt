@@ -4,7 +4,10 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.*
 
 /**
- * Data class fields Returns a list of atributes in the order of the primary constructor
+ * Data class fields Returns the list of all properties of the primary constructor parameters of a data class.
+ *
+ * @return the list of all properties of the primary constructor parameters of a data class
+ * @throws IllegalArgumentException if the instance is not a data class
  */
 val KClass<*>.dataClassFields: List<KProperty<*>>
     get() {
@@ -13,18 +16,33 @@ val KClass<*>.dataClassFields: List<KProperty<*>>
             declaredMemberProperties.find { it.name == p.name }!!
         }
     }
-//TODO MISSING COMMENTS
-// saber se um KClassifier é um enumerado
+
+/**
+ * Is enum Verifies if the instance is an enum class.
+ *
+ * @return true if the instance is an enum class, false otherwise
+ */
 val KClassifier?.isEnum: Boolean
     get() = this is KClass<*> && this.isSubclassOf(Enum::class)
 
-// obter uma lista de constantes de um tipo enumerado
+/**
+ * Enum constants Returns a list of all constants of an enum class.
+ *
+ * @return a list of all constants of an enum class
+ * @throws IllegalArgumentException if the instance is not an enum class
+ */
 val KClassifier?.enumConstants: List<*>
     get() {
         require(isEnum) { "instance must be enum" }
         return asClass.java.enumConstants.toList()
     }
 
+/**
+ * As Class Returns the receiver instance as a KClass object.
+ * Throws an IllegalArgumentException if the receiver is not an instance of KClass.
+ * @return the receiver instance as a KClass object
+ * @throws IllegalArgumentException if the receiver is not an instance of KClass
+ */
 val KClassifier?.asClass: KClass<*>
     get() {
         require(this is KClass<*>) { "instance must be KClass"}
@@ -43,18 +61,8 @@ fun instanciateJson(obj : Any?):JsonValue {
         is Number -> JsonNumber(obj)
         is Boolean -> JsonBoolean(obj)
         null -> JsonNull()
-        is Map<*, *> -> //JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) })
-            //if the object was empty, it was creating it with something inside
-            /*
-            if (obj.isEmpty())
-                JsonObject()
-            else
-                JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) })
-
-             */
-            JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) }).takeIf { it.properties!!.isNotEmpty() } ?: JsonObject()
-        is Collection<*> -> //JsonArray(obj.map { instanciateJson(it) })
-            JsonArray(obj.map { instanciateJson(it) }).takeIf { it.valueList!!.isNotEmpty()} ?: JsonArray()
+        is Map<*, *> -> JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) }).takeIf { it.properties!!.isNotEmpty() } ?: JsonObject()
+        is Collection<*> -> JsonArray(obj.map { instanciateJson(it) }).takeIf { it.valueList!!.isNotEmpty()} ?: JsonArray()
         //MOST LIKELY WILL ALSO REQUIRE VERIFICATION IF THE OBJ IS EMPTY
         is Enum<*> -> instanciateJson(obj)
         else -> {

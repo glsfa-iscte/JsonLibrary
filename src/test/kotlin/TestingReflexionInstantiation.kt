@@ -1,7 +1,8 @@
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 class TestingReflexionInstantiation {
-    //TODO MORE TESTS FOR THE instanciateJson and Annotations
+
+    //TODO add test to enumerate (check if instanciateJson enumerate needs to be changed)and more annotations
     internal val insc01 = mapOf(
         "numero" to 101101,
         "nome" to "Dave Farley",
@@ -148,7 +149,7 @@ class TestingReflexionInstantiation {
         assertEquals(fullExample01,jsonObj09.toJsonString)
         assertEquals(fullExample03,jsonObj10.toJsonString)
         assertEquals(fullExample04,jsonObj11.toJsonString)
-        //TODO  add test to enumerate and more annotations
+
     }
 
     /**
