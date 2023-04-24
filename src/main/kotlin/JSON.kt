@@ -100,7 +100,7 @@ data class JsonArray(
     }
 }
 
- */
+
 
 val KClass<*>.dataClassFields: List<KProperty<*>>
     get() {
@@ -170,4 +170,7 @@ fun changeReturnType(value: Any?, newType: String):Any{
         "int" -> value.toString().toInt()
         else -> throw IllegalArgumentException("Unrecognized type, try: string, boolean, int")
     }
+
 }
+
+ */

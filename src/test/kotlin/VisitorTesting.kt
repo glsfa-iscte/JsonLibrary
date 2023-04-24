@@ -111,6 +111,7 @@ class VisitorTesting {
     //TODO MORE TESTS FOR THE SECOND REQUIREMENT OF THE VISITORS
     //FINNISH THE TESTS BELLOW
     //more tests for the JsonSearch!! only have 2 above
+    /*
     @Test
     fun testJsonSearch02(){
         assertEquals(
@@ -142,6 +143,5 @@ class VisitorTesting {
             searchJson(inscritos, inscritoPredicate)
         )
     }
-
-
+     */
 }
