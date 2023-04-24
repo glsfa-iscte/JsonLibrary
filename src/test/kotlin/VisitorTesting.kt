@@ -93,6 +93,7 @@ class VisitorTesting {
             assertEquals(firstElementStructure, elementStructure)
         }
     }
+    //TODO ADICIONAR UM QUE TENHA UM OBJETO DENTRO DO OBJETO (dentro de cada inscricao tem um obj tambem)
     @Test
     fun testSearchJsonStructure02(){
         val objectList = searchJson(inscritos) {

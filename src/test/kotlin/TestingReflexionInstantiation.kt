@@ -147,7 +147,7 @@ class TestingReflexionInstantiation {
         //assertEquals("", jsonObj.toJsonString)
         assertEquals(fullExample01,jsonObj09.toJsonString)
         assertEquals(fullExample03,jsonObj10.toJsonString)
-        //TODO MISING assertEquals(fullExample04,jsonObj11.toJsonString)
+        //TODO MISING assertEquals(fullExample04,jsonObj11.toJsonString) add test to enumerate
     }
 
     /**
