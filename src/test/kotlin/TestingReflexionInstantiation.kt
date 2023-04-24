@@ -2,6 +2,108 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 class TestingReflexionInstantiation {
     //TODO MORE TESTS FOR THE instanciateJson and Annotations
+    internal val insc01 = mapOf(
+        "numero" to 101101,
+        "nome" to "Dave Farley",
+        "internacional" to true
+    )
+
+    internal val insc02 = mapOf(
+        "numero" to 101102,
+        "nome" to "Martin Fowler",
+        "internacional" to true
+    )
+
+    internal val insc03 = mapOf(
+        "numero" to 92888,
+        "nome" to "Gustavo Ferreira",
+        "internacional" to false
+    )
+
+    internal val inscritos = listOf(insc01, insc02, insc03)
+
+    internal val inscricoes = mapOf(
+        "uc" to "PA",
+        "ects" to 6.0,
+        "data-exame" to null,
+        "inscritos" to inscritos
+    )
+
+    internal val inscricoes03b = (mapOf(
+        "uc" to ("PA"),
+        "ects" to (6.0),
+        "data-exame" to null,
+        "inscritos" to (listOf(
+            insc02,
+            (mapOf(
+                "numero" to (92888),
+                "nome" to ("Gustavo Ferreira"),
+                "internacional" to (false),
+                "inscritos" to (listOf(
+                    (26503),
+                    null,
+                    (mapOf(
+                        "numero" to (101104),
+                        "test" to (mapOf(
+                            "emptyArray" to emptyList<Any>()
+                        )),
+                        "emptyObject" to emptyMap<Any, Any>()
+                    ))
+                ))
+            ))
+        ))
+    ))
+
+    internal val inscricoes04b = mapOf(
+        "uc" to "PA",
+        "ects" to 6.0,
+        "data-exame" to null,
+        "inscritos" to (listOf(
+            (mapOf(
+                "numero" to (101101),
+                "nome" to ("Dave Farley"),
+                "internacional" to (true)
+            )),
+            (mapOf(
+                "numero" to (101102),
+                "nome" to ("Jane Doe"),
+                "intern" to (mapOf(
+                    "x" to (true),
+                    "y" to (false)
+                ))
+            )),
+            (mapOf(
+                "numero" to (101103),
+                "nome" to ("John Who"),
+                "internacional" to (true)
+            )),
+            (mapOf(
+                "numero" to (101104),
+                "nome" to ("William That"),
+                "x" to (true)
+            )),
+            (mapOf(
+                "numero" to (101105),
+                "nome" to ("Who This"),
+                "internacional" to (listOf(
+                    ("Me"),
+                    (mapOf(
+                        "notIt" to (true),
+                        "x" to (1),
+                        "y" to ("Hi"),
+                        "numero" to (10)
+                    )),
+                    (listOf(
+                        (mapOf(
+                            "x" to (2),
+                            "y" to ("Hi")
+                        ))
+                    ))
+                ))
+            ))
+        ))
+    )
+
     @Test
     fun testInstanciateJson(){
         data class TestClass(val name: String, val number: Int)
@@ -27,6 +129,9 @@ class TestingReflexionInstantiation {
         val jsonObj06 = instanciateJson(testMap).toJsonString
         val jsonObj07 = instanciateJson(testCollection)
         val jsonObj08 = instanciateJson(testEnum)
+        val jsonObj09 = instanciateJson(inscricoes)
+        val jsonObj10 = instanciateJson(inscricoes03b)
+        val jsonObj11 = instanciateJson(inscricoes04b)
 
         println(jsonObj01)
         println(jsonObj02)
@@ -37,7 +142,12 @@ class TestingReflexionInstantiation {
         println(jsonObj07)
         println(jsonObj08)
 
+
+
         //assertEquals("", jsonObj.toJsonString)
+        assertEquals(fullExample01,jsonObj09.toJsonString)
+        assertEquals(fullExample03,jsonObj10.toJsonString)
+        //TODO MISING assertEquals(fullExample04,jsonObj11.toJsonString)
     }
 
     /**
