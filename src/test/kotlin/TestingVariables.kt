@@ -101,6 +101,56 @@ internal val fullExample03: String =
     "\t]\n" +
     "}"
 
+internal val fullExample04: String =
+    "{\n" +
+    "\t \"uc\" : \"PA\",\n" +
+    "\t \"ects\" : 6.0,\n" +
+    "\t \"data-exame\" : null,\n" +
+    "\t \"inscritos\" : [\n" +
+    "\t\t{\n" +
+    "\t\t\t \"numero\" : 101101,\n" +
+    "\t\t\t \"nome\" : \"Dave Farley\",\n" +
+    "\t\t\t \"internacional\" : true\n" +
+    "\t\t},\n" +
+    "\t\t{\n" +
+    "\t\t\t \"numero\" : 101102,\n" +
+    "\t\t\t \"nome\" : \"Jane Doe\",\n" +
+    "\t\t\t \"intern\" : {\n" +
+    "\t\t\t\t \"x\" : true,\n" +
+    "\t\t\t\t \"y\" : false\n" +
+    "\t\t\t}\n" +
+    "\t\t},\n" +
+    "\t\t{\n" +
+    "\t\t\t \"numero\" : 101103,\n" +
+    "\t\t\t \"nome\" : \"John Who\",\n" +
+    "\t\t\t \"internacional\" : true\n" +
+    "\t\t},\n" +
+    "\t\t{\n" +
+    "\t\t\t \"numero\" : 101104,\n" +
+    "\t\t\t \"nome\" : \"William That\",\n" +
+    "\t\t\t \"x\" : true\n" +
+    "\t\t},\n" +
+    "\t\t{\n" +
+    "\t\t\t \"numero\" : 101105,\n" +
+    "\t\t\t \"nome\" : \"Who This\",\n" +
+    "\t\t\t \"internacional\" : [\n" +
+    "\t\t\t\t \"Me\" ,\n" +
+    "\t\t\t\t{\n" +
+    "\t\t\t\t\t \"notIt\" : true,\n" +
+    "\t\t\t\t\t \"x\" : 1,\n" +
+    "\t\t\t\t\t \"y\" : \"Hi\",\n" +
+    "\t\t\t\t\t \"numero\" : 10\n" +
+    "\t\t\t\t},\n" +
+    "\t\t\t\t[\n" +
+    "\t\t\t\t\t{\n" +
+    "\t\t\t\t\t\t \"x\" : 2,\n" +
+    "\t\t\t\t\t\t \"y\" : \"Hi\"\n" +
+    "\t\t\t\t\t}\n" +
+    "\t\t\t\t]\n" +
+    "\t\t\t]\n" +
+    "\t\t}\n" +
+    "\t]\n" +
+    "}"
 internal val insc01 = JsonObject(mapOf(
     "numero" to JsonNumber(101101),
     "nome" to JsonString("Dave Farley"),
@@ -126,6 +176,43 @@ internal val inscricoes01 = JsonObject(mapOf(
     "ects" to JsonNumber(6.0),
     "data-exame" to JsonNull(),
     "inscritos" to inscritos
+))
+
+internal val insc01b = JsonObject(mapOf(
+    "numero" to JsonNumber(101101),
+    "nome" to JsonString("Dave Farley"),
+    "internacional" to JsonBoolean(true),
+    "subInscritos" to JsonObject(mapOf(
+        "entry" to JsonBoolean(true)
+    ))
+
+))
+
+internal val insc02b = JsonObject(mapOf(
+    "numero" to JsonNumber(101102),
+    "nome" to JsonString("Martin Fowler"),
+    "internacional" to JsonBoolean(true),
+    "subInscritos" to JsonObject(mapOf(
+        "entry" to JsonBoolean(true)
+    ))
+))
+
+internal val insc03b = JsonObject(mapOf(
+    "numero" to JsonNumber(92888),
+    "nome" to JsonString("Gustavo Ferreira"),
+    "internacional" to JsonBoolean(true),
+    "subInscritos" to JsonObject(mapOf(
+        "entry" to JsonBoolean(true)
+    ))
+))
+
+internal val inscritosb = JsonArray(listOf(insc01b, insc02b, insc03b))
+
+internal val inscricoes01b = JsonObject(mapOf(
+    "uc" to JsonString("PA"),
+    "ects" to JsonNumber(6.0),
+    "data-exame" to JsonNull(),
+    "inscritos" to inscritosb
 ))
 
 internal val inscricoes02 = JsonObject(mapOf(

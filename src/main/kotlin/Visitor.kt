@@ -119,30 +119,7 @@ fun getObjectsWithSpecificNameValue(jsonElement: JsonStructure, properties:List<
     jsonElement.accept(visitor)
     return visitor.lst
 }
-//ATE AQUI ESTA FEITO E VERIFICADO
 
-/*
-TODO
-    verificar que o modelo obedece a determinada estrutura, por exemplo:
-        a propriedade numero apenas tem como valores números inteiros
-        a propriedade inscritos consiste num array onde todos os objetos têm a mesma estutura
-
-
-//abaixo seria uma implementação explicitamente, mas no contexto da cadeira acho que faria mais sentido criar
-//higher order function para fazer isto
-// a propriedade numero apenas tem como valores números inteiros
-// a propriedade inscritos consiste num array onde todos os objetos têm a mesma estutura
-class ChekcIfModelPropertyObeysStructure(val name: String): Visitor{
-    var obeysStructure: Boolean = true
-    override fun visit(jsonElement: JsonObject) {
-        "Not yet implemented"
-    }
-
-    override fun visit(jsonElement: JsonArray) {
-        "Not yet implemented"
-    }
-}
- */
 /**
  * Json search visitor
  *
