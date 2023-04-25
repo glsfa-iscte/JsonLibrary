@@ -10,5 +10,4 @@ import org.junit.platform.suite.api.Suite
  * Test suite This class is used to run all test classes that have been selected in @SelectClasses
  *
  */
-class TestSuite {
-}
+class TestSuite

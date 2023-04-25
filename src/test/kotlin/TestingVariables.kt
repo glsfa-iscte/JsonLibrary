@@ -215,6 +215,58 @@ internal val inscricoes01b = JsonObject(mapOf(
     "inscritos" to inscritosb
 ))
 
+
+
+internal val insc01c = JsonObject(mapOf(
+    "numero" to JsonNumber(101101),
+    "nome" to JsonString("Dave Farley"),
+    "internacional" to JsonBoolean(true),
+    "subInscritos" to JsonObject(mapOf(
+        "entry" to JsonBoolean(true),
+        "b" to JsonArray(listOf(
+            JsonString("abc"),
+            JsonBoolean(true)
+        ))
+    ))
+
+))
+
+internal val insc02c = JsonObject(mapOf(
+    "numero" to JsonNumber(101102),
+    "nome" to JsonString("Martin Fowler"),
+    "internacional" to JsonBoolean(true),
+    "subInscritos" to JsonObject(mapOf(
+        "entry" to JsonBoolean(true),
+        "b" to JsonArray(listOf(
+            JsonString("abc"),
+            JsonBoolean(true)
+        ))
+    ))
+))
+
+internal val insc03c = JsonObject(mapOf(
+    "numero" to JsonNumber(92888),
+    "nome" to JsonString("Gustavo Ferreira"),
+    "internacional" to JsonBoolean(true),
+    "subInscritos" to JsonObject(mapOf(
+        "entry" to JsonBoolean(true),
+        "b" to JsonArray(listOf(
+            JsonString("abc"),
+            //JsonNumber(123)
+            JsonBoolean(true)
+        ))
+    ))
+))
+
+internal val inscritosc = JsonArray(listOf(insc01c, insc02c, insc03c))
+
+internal val inscricoes01c = JsonObject(mapOf(
+    "uc" to JsonString("PA"),
+    "ects" to JsonNumber(6.0),
+    "data-exame" to JsonNull(),
+    "inscritos" to inscritosc
+))
+
 internal val inscricoes02 = JsonObject(mapOf(
     "uc" to JsonString("PA"),
     "ects" to JsonNumber(6.0),

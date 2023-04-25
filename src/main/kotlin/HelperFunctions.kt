@@ -15,3 +15,17 @@ fun getJsonPropertyTypes(json: String, pattern: String): Collection<Pair<String,
         .toList()
     return properties
 }
+
+/**
+ * Apply regex to string
+ *
+ * This function returns a string after applying a filter with the provided regular expression
+ *
+ * @param originalString The string to be filtered
+ * @param pattern The string containing the pattern to be converted to a regular expression
+ * @return A filtered string by a regular expression
+ */
+fun applyRegexToString(originalString: String, pattern: String): String{
+    val regex = pattern.toRegex()
+    return originalString.replace(regex, "")
+}

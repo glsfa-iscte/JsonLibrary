@@ -103,7 +103,8 @@ class VisitorTesting {
 
         val inscritosArray = matchingObjects[0].properties!!.getValue("inscritos") as JsonArray
         val inscritosStructureFirstElement = inscritosArray.valueList!![0].toString()
-        val pattern = "([^=,]+)=(Json[A-Za-z<]+)"
+        println(inscritosStructureFirstElement)
+        val pattern = "([^=,]+)=(Json[A-Za-z]+)"
 
         val firstElementStructure = getJsonPropertyTypes(inscritosStructureFirstElement, pattern)
         println("FIRST ELEM: " + firstElementStructure)
@@ -113,6 +114,35 @@ class VisitorTesting {
             val elementStructure = getJsonPropertyTypes(properties, pattern)
             println("OTHER ELEM: " + elementStructure)
             assertEquals(firstElementStructure, elementStructure)
+        }
+    }
+
+    //TODO
+    // OK, SO MOST LIKELY NOT NECESSARY THIS TYPE OF CHECK, SINCE WHAT'S INSIDE THE ARRAY B DOESNT MATTER SINCE ITS A VALUE!!!!!
+    // WITH THE ABOVE, I AM UNABLE TO CHECK THE B ARRAY, AS SUCH, THIS REGEX AND THE FILTER WERE CHANGED TO ACCOMODATE THESE REQUIREMENTS
+    @Test
+    fun testSearchJsonStructure02b(){
+        val predicate = { jsonObject: JsonObject ->
+            jsonObject.properties?.containsKey("inscritos") == true && (jsonObject as JsonObject).properties!!.getValue("inscritos") is JsonArray
+        }
+
+        val matchingObjects = searchJson(inscricoes01c, predicate)
+        assertEquals(1, matchingObjects.size)
+
+        val inscritosArray = matchingObjects[0].properties!!.getValue("inscritos") as JsonArray
+        val inscritosStructureFirstElement = inscritosArray.valueList!![0].toString()
+        val pattern ="value=[0-9A-Za-z ]+"//"([^=,]+)=(Json[A-Za-z]+)"
+
+        val firstElementStructure = applyRegexToString(inscritosStructureFirstElement, pattern)//getJsonPropertyTypes(inscritosStructureFirstElement, pattern)
+        println("FIRST ELEM: " + firstElementStructure)
+        var index=1
+
+        (inscritosArray as JsonArray).valueList!!.drop(1).forEach {
+            val properties = inscritosArray.valueList!![index].toString()
+            val elementStructure = applyRegexToString(properties, pattern)//getJsonPropertyTypes(properties, pattern)
+            println("OTHER ELEM: " + elementStructure)
+            assertEquals(firstElementStructure, elementStructure)
+            index += 1
         }
     }
     @Test
@@ -130,3 +160,4 @@ class VisitorTesting {
         }
     }
 }
+

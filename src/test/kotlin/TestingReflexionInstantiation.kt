@@ -105,6 +105,39 @@ class TestingReflexionInstantiation {
         ))
     )
 
+    enum class TestEnumNumbers(val value: Int) {
+        ONE(1),
+        TWO(2),
+        THREE(3)
+    }
+
+    enum class TestEnumString {
+        A,
+        B,
+        C
+    }
+
+    enum class Color(val rgb: Int) {
+        RED(0xFF0000),
+        GREEN(0x00FF00),
+        BLUE(0x0000FF)
+    }
+
+    @Test
+    fun testEnumJsonConversion() {
+
+        assertEquals(JsonString("RED"), instanciateJson(Color.RED))
+        assertEquals(JsonString("GREEN"), instanciateJson(Color.GREEN))
+        assertEquals(JsonString("BLUE"), instanciateJson(Color.BLUE))
+        assertEquals(JsonString("A"), instanciateJson(TestEnumString.A))
+        assertEquals(JsonString("B"), instanciateJson(TestEnumString.B))
+        assertEquals(JsonString("C"), instanciateJson(TestEnumString.C))
+        assertEquals(JsonString("ONE"), instanciateJson(TestEnumNumbers.ONE))
+        assertEquals(JsonString("TWO"), instanciateJson(TestEnumNumbers.TWO))
+        assertEquals(JsonString("THREE"), instanciateJson(TestEnumNumbers.THREE))
+    }
+
+
     @Test
     fun testInstanciateJson(){
         data class TestClass(val name: String, val number: Int)
@@ -130,6 +163,7 @@ class TestingReflexionInstantiation {
         val jsonObj06 = instanciateJson(testMap).toJsonString
         val jsonObj07 = instanciateJson(testCollection)
         val jsonObj08 = instanciateJson(testEnum)
+
         val jsonObj09 = instanciateJson(inscricoes)
         val jsonObj10 = instanciateJson(inscricoes03b)
         val jsonObj11 = instanciateJson(inscricoes04b)
@@ -143,9 +177,6 @@ class TestingReflexionInstantiation {
         println(jsonObj07)
         println(jsonObj08)
 
-
-
-        //assertEquals("", jsonObj.toJsonString)
         assertEquals(fullExample01,jsonObj09.toJsonString)
         assertEquals(fullExample03,jsonObj10.toJsonString)
         assertEquals(fullExample04,jsonObj11.toJsonString)
