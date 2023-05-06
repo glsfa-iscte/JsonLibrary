@@ -63,7 +63,7 @@ fun instanciateJson(obj : Any?):JsonValue {
         null -> JsonNull()
         is Map<*, *> -> JsonObject(obj.entries.associate { it.key.toString() to instanciateJson(it.value) }).takeIf { it.properties!!.isNotEmpty() } ?: JsonObject()
         is Collection<*> -> JsonArray(obj.map { instanciateJson(it) }).takeIf { it.valueList!!.isNotEmpty()} ?: JsonArray()
-        is Enum<*> ->  JsonString(obj.name)//JsonObject(mapOf("name" to JsonString(obj.name), "ordinal" to JsonNumber(obj.ordinal)))//instanciateJson(obj)
+        is Enum<*> ->  JsonString(obj.name)
         else -> {
             if (obj::class.isData) {
                 val propertyList = obj::class.dataClassFields

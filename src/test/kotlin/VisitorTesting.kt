@@ -1,5 +1,7 @@
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import kotlin.reflect.KClass
+
 class VisitorTesting {
     internal val x01a = JsonObject(mapOf(
             "x" to JsonBoolean(true),
@@ -145,6 +147,39 @@ class VisitorTesting {
             index += 1
         }
     }
+
+    //TODO NESTA PARTE COMO O MODELO É COM DATA CLASSES EU POSSO PASSAR UMA LISTA DO ESPERADO E COM BASE NISSO POSSO FAZER (LISTA == LISTB) ELEMA == ELEMB
+    // ADICIONAR UM VISITOR APENAS PARA ISTO
+    @Test
+    fun testSearchJsonStructure02c(){
+        val predicate = { jsonObject: JsonObject ->
+            jsonObject.properties?.containsKey("inscritos") == true && (jsonObject as JsonObject).properties!!.getValue("inscritos") is JsonArray
+        }
+        val matchingObjects = searchJson(inscricoes01c, predicate)
+        assertEquals(1, matchingObjects.size)
+
+        val inscritosArray = matchingObjects[0].properties!!.getValue("inscritos") as JsonArray
+
+        val inscritosStructureFirstElement = inscritosArray.valueList!![0]
+        val firstElemKeys = (inscritosStructureFirstElement as JsonObject).properties?.keys
+        println("FIRST ELEM KEYS: " + firstElemKeys)
+
+        (inscritosArray as JsonArray).valueList!!.drop(1).forEach {
+
+            if(it is JsonObject){
+                println("OTHER ELEM KEYS: " + it.properties?.keys)
+                assertTrue(it.properties?.keys == firstElemKeys)
+            }else
+                if(it is JsonArray){
+                    //TODO
+                }
+        }
+    }
+
+    fun check(value: JsonValue, type: KClass<out JsonValue>): Boolean {
+        return type.isInstance(value)
+    }
+
     @Test
     fun testSearchJsonStructure03(){
         val objectList = searchJson(inscritos) {
@@ -160,4 +195,3 @@ class VisitorTesting {
         }
     }
 }
-
