@@ -84,7 +84,7 @@ interface JsonObjectObserver {
  */
 data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStructure {
     override var depth: Int = 1
-    private val data = properties?.toMutableMap()
+    val data = properties?.toMutableMap()
     private val observers = mutableListOf<JsonObjectObserver>()
 
     fun addObserver(observer: JsonObjectObserver) {
@@ -124,6 +124,7 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
         observers.forEach {
             it.addProperty(key)
         }
+        println("PROPERTY WAS ADDED")
     }
 
     fun removeProperty(key: String) {

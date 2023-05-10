@@ -16,30 +16,36 @@ class EditorView(private val model: JsonObject): JPanel() {
     fun addObserver(observer: EditViewObserver) = observers.add(observer)
     init{
         model.addObserver(object: JsonObjectObserver{
+            //ATENCAO AOS NOMES JA QUE PODE LEVAR AO NÃO FUNCIONAMENTO
             override fun addProperty(key: String) {
-                addProperty(key)
+                propertyAdded(key)
             }
 
             override fun removeProperty(key: String) {
-                //remove widget
+                removeProperty(key)
             }
 
             override fun propertyModified(key: String, newValue: JsonValue) {
-                //modifica propriedade do widget
+                //TODO modifica propriedade do widget
             }
 
             override fun addObject(key: String) {
-                //adiciona um widget nested
+                //TODO adiciona um widget nested
             }
         })
     testPanel()
     }
 
-    fun addProperty(key: String){
+    fun propertyAdded(key: String){
         add(testWidget(key, "N/A"))
         println("HI")
         revalidate()
         repaint()
+    }
+
+    fun removeProperty(key: String){
+        println(components.forEach { it.name })
+        println(model.data)
     }
 //esta parte pode fazer parte de uma view
 private fun testPanel(): JPanel =
@@ -59,11 +65,19 @@ private fun testPanel(): JPanel =
                         val add = JButton("add")
                         add.addActionListener {
                             val text = JOptionPane.showInputDialog("text")
-                            //this will call this class's addProperty, which is responsible for adding a new test widget
-                            addProperty(text)
+                            //this will call this class's addProperty, which is responsible for adding a new test widget and will also warn every observer of it
+                            observers.forEach {
+                                it.addProperty(text)
+                            }
                             //add(testWidget(text, "?"))
                             menu.isVisible = false
                         }
+
+                        val deleteSelected = JButton("delete last")
+                        deleteSelected.addActionListener {
+                            removeProperty("")
+                        }
+
                         val del = JButton("delete all")
                         del.addActionListener {
                             components.forEach {
@@ -73,7 +87,8 @@ private fun testPanel(): JPanel =
                             revalidate()
                             repaint()
                         }
-                        menu.add(add);
+                        menu.add(add)
+                        menu.add(deleteSelected)
                         menu.add(del)
                         menu.show(this@apply, 100, 100);
                     }
