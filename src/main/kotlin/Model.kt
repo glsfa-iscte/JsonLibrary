@@ -1,8 +1,6 @@
 /*
-TODO    Depth não está criada corretamente                                                                              DONE
-        É necessario ter maneira de serializar para ficheiro
-        Adicionar mais testes do modelo (full examples)                                                                 DONE
-        Depth ainda tem erros ja que no array ele nao está a colocar \t nos elementos do Json array                     DONE
+TODO
+CHANGE MODEL SO THAT ITS ELEMENTS ARE OBSERVABLE
  */
 /**
  * Json value - This interface represents a value in json, string in double quotes, or a number, or true or false or null, or an object or an array
@@ -71,6 +69,13 @@ data class JsonNull(val value: Any? = null) : JsonValue {
         get() = " null "
 }
 
+interface JsonObjectObserver {
+    fun addProperty(key: String) { }
+    fun removeProperty(key: String){ }
+    fun propertyModified(key: String, newValue: JsonValue){ }
+    fun addObject(key: String) { }
+}
+
 /**
  * Json object - This dataclass is used to represent a Json Object
  *
@@ -78,9 +83,17 @@ data class JsonNull(val value: Any? = null) : JsonValue {
  * @constructor Create empty Json object
  */
 data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStructure {
-
     override var depth: Int = 1
+    private val data = properties?.toMutableMap()
+    private val observers = mutableListOf<JsonObjectObserver>()
 
+    fun addObserver(observer: JsonObjectObserver) {
+        observers.add(observer)
+    }
+
+    fun removeObserver(observer: JsonObjectObserver) {
+        observers.remove(observer)
+    }
     /**
      * Goes through each of the name/value pair in properties and if it's a Json Structure, it's depth is updated to reflect the indentation expected
      */
@@ -106,6 +119,34 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
     override fun accept(visitor: Visitor) {
         visitor.visit(this)
     }
+    fun addProperty(key: String) {
+        data?.put(key, JsonNull())
+        observers.forEach {
+            it.addProperty(key)
+        }
+    }
+
+    fun removeProperty(key: String) {
+        data?.remove(key)
+        observers.forEach {
+            it.removeProperty(key)
+        }
+    }
+
+    fun modifyValue(key:String, newValue: JsonValue) {
+        data?.remove(key)
+        data?.put(key, newValue)
+        observers.forEach{
+            it.propertyModified(key, newValue)
+        }
+    }
+
+    fun addObject(key: String) {
+        data?.put(key, JsonObject())
+        observers.forEach {
+            it.addObject(key)
+        }
+    }
 }
 
 /**
@@ -115,7 +156,6 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
  * @constructor Create empty Json array
  */
 data class JsonArray(val valueList: List<JsonValue>? = null) : JsonStructure {
-
     override var depth: Int = 1
     init {
         valueList?.updateDepth(depth)
@@ -134,6 +174,7 @@ data class JsonArray(val valueList: List<JsonValue>? = null) : JsonStructure {
     override fun accept(visitor: Visitor) {
         visitor.visit(this)
     }
+
 }
 
 /**
