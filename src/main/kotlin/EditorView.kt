@@ -22,7 +22,7 @@ class EditorView(private val model: JsonObject): JPanel() {
             }
 
             override fun removeProperty(key: String) {
-                removeProperty(key)
+                propertyRemoved(key)
             }
 
             override fun propertyModified(key: String, newValue: JsonValue) {
@@ -43,7 +43,7 @@ class EditorView(private val model: JsonObject): JPanel() {
         repaint()
     }
 
-    fun removeProperty(key: String){
+    fun propertyRemoved(key: String){
         println(components.forEach { it.name })
         println(model.data)
     }
@@ -73,9 +73,14 @@ private fun testPanel(): JPanel =
                             menu.isVisible = false
                         }
 
-                        val deleteSelected = JButton("delete last")
+                        val deleteSelected = JButton("delete")
                         deleteSelected.addActionListener {
-                            removeProperty("")
+                            observers.forEach {
+                                it.removeProperty("")
+                            }
+
+
+                            println("Removed")
                         }
 
                         val del = JButton("delete all")

@@ -76,6 +76,9 @@ interface JsonObjectObserver {
     fun addObject(key: String) { }
 }
 
+class JsonObjectBuilder{
+
+}
 /**
  * Json object - This dataclass is used to represent a Json Object
  *
@@ -84,7 +87,7 @@ interface JsonObjectObserver {
  */
 data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStructure {
     override var depth: Int = 1
-    val data = properties?.toMutableMap()
+    val data = mutableMapOf<String, JsonValue>()//properties?.toMutableMap()
     private val observers = mutableListOf<JsonObjectObserver>()
 
     fun addObserver(observer: JsonObjectObserver) {

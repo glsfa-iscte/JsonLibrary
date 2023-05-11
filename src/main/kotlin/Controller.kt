@@ -28,6 +28,10 @@ fun main() {
             override fun addProperty(key: String) {
                 model.addProperty(key)
             }
+
+            override fun removeProperty(key: String) {
+                model.removeProperty(key)
+            }
         })
         val scrollPane = JScrollPane(editorView).apply {
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
