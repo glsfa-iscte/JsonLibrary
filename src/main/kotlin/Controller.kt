@@ -13,7 +13,7 @@ import javax.swing.JTextArea
 // MUST HAVE A STACK TO PROVIDE UNDO
 
 fun main() {
-    val model = JsonObject()
+    val model = JsonObjectBuilder()
 
     val frame = JFrame("Josue - JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
@@ -31,6 +31,11 @@ fun main() {
 
             override fun removeProperty(key: String) {
                 model.removeProperty(key)
+            }
+
+            override fun addObject(key: String) {
+                println("2")
+                model.addObject(key)
             }
         })
         val scrollPane = JScrollPane(editorView).apply {

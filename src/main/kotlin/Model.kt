@@ -73,21 +73,13 @@ interface JsonObjectObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
     fun propertyModified(key: String, newValue: JsonValue){ }
-    fun addObject(key: String) { }
+    fun addObject(key: String){ }
 }
 
-class JsonObjectBuilder{
-
-}
-/**
- * Json object - This dataclass is used to represent a Json Object
- *
- * @property properties  an unordered set of name/value pairs that can be omitted to create an empty Json Object
- * @constructor Create empty Json object
- */
-data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStructure {
-    override var depth: Int = 1
-    val data = mutableMapOf<String, JsonValue>()//properties?.toMutableMap()
+class JsonObjectBuilder {
+    var data = mutableMapOf<String, JsonValue>()
+    var jsonData = JsonObject(data)
+    var jsonObjectList = mutableMapOf<String, JsonObject>()
     private val observers = mutableListOf<JsonObjectObserver>()
 
     fun addObserver(observer: JsonObjectObserver) {
@@ -97,6 +89,47 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
     fun removeObserver(observer: JsonObjectObserver) {
         observers.remove(observer)
     }
+
+    fun addProperty(key: String) {
+        data.put(key, JsonNull())
+        observers.forEach {
+            it.addProperty(key)
+        }
+        println("PROPERTY WAS ADDED")
+    }
+
+    fun removeProperty(key: String) {
+        data.remove(key)
+        observers.forEach {
+            it.removeProperty(key)
+        }
+    }
+
+    fun modifyValue(key:String, newValue: JsonValue) {
+        data.remove(key)
+        data.put(key, newValue)
+        observers.forEach{
+            it.propertyModified(key, newValue)
+        }
+    }
+    fun addObject(key:String){
+        println("1")
+        data.put(key, JsonObject())
+        jsonObjectList.put(key, JsonObject(mutableMapOf<String, JsonValue>()))
+        observers.forEach {
+            it.addObject(key)
+        }
+    }
+}
+/**
+ * Json object - This dataclass is used to represent a Json Object
+ *
+ * @property properties  an unordered set of name/value pairs that can be omitted to create an empty Json Object
+ * @constructor Create empty Json object
+ */
+data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStructure {
+    override var depth: Int = 1
+
     /**
      * Goes through each of the name/value pair in properties and if it's a Json Structure, it's depth is updated to reflect the indentation expected
      */
@@ -121,35 +154,6 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
 
     override fun accept(visitor: Visitor) {
         visitor.visit(this)
-    }
-    fun addProperty(key: String) {
-        data?.put(key, JsonNull())
-        observers.forEach {
-            it.addProperty(key)
-        }
-        println("PROPERTY WAS ADDED")
-    }
-
-    fun removeProperty(key: String) {
-        data?.remove(key)
-        observers.forEach {
-            it.removeProperty(key)
-        }
-    }
-
-    fun modifyValue(key:String, newValue: JsonValue) {
-        data?.remove(key)
-        data?.put(key, newValue)
-        observers.forEach{
-            it.propertyModified(key, newValue)
-        }
-    }
-
-    fun addObject(key: String) {
-        data?.put(key, JsonObject())
-        observers.forEach {
-            it.addObject(key)
-        }
     }
 }
 

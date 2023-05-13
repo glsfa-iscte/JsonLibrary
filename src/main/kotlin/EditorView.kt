@@ -3,14 +3,15 @@ import java.awt.Dimension
 import java.awt.GridLayout
 import java.awt.event.*
 import javax.swing.*
-//é possivel que isto possa ser dividido num controller
+//TODO DESCUBRIR COMO POSSO SELECIONAR UM DOS OBJETOS E ADICIONAR A ESSE, POR ENQUANTO SO DÁ PARA IR ADICIONANDO PROPRIEDADES NO 1 OBJETO
+// O NAME É UM JLABEL, SECALHAR DEVE SER MUDADO PARA UM JBUTTON, DE FORMA A AO CLICAR, SELECIONAR ESSE OBJETO PARA ADICIONAR PROPRIEDADES (MODEL.JSONDATA = OBJETO_SELECIONADO)
 interface EditViewObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
     fun propertyModified(key: String, newValue: JsonValue){ }
-    fun addObject(key: String) { }
+    fun addObject(key: String){ }
 }
-class EditorView(private val model: JsonObject): JPanel() {
+class EditorView(private val model: JsonObjectBuilder): JPanel() {
     private val observers: MutableList<EditViewObserver> = mutableListOf()
 
     fun addObserver(observer: EditViewObserver) = observers.add(observer)
@@ -30,7 +31,8 @@ class EditorView(private val model: JsonObject): JPanel() {
             }
 
             override fun addObject(key: String) {
-                //TODO adiciona um widget nested
+                println("3")
+                propertyAdded(key)
             }
         })
     testPanel()
@@ -38,14 +40,12 @@ class EditorView(private val model: JsonObject): JPanel() {
 
     fun propertyAdded(key: String){
         add(testWidget(key, "N/A"))
-        println("HI")
         revalidate()
         repaint()
     }
 
     fun propertyRemoved(key: String){
-        println(components.forEach { it.name })
-        println(model.data)
+        println(model.jsonData.toJsonString)
     }
 //esta parte pode fazer parte de uma view
 private fun testPanel(): JPanel =
@@ -54,9 +54,6 @@ private fun testPanel(): JPanel =
             alignmentX = Component.LEFT_ALIGNMENT
             alignmentY = Component.TOP_ALIGNMENT
 
-            add(testWidget("A", "um"))
-            add(testWidget("B", "dois"))
-            add(testWidget("C", "tres"))
             // menu
             addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
@@ -66,8 +63,14 @@ private fun testPanel(): JPanel =
                         add.addActionListener {
                             val text = JOptionPane.showInputDialog("text")
                             //this will call this class's addProperty, which is responsible for adding a new test widget and will also warn every observer of it
-                            observers.forEach {
-                                it.addProperty(text)
+                            if(text.endsWith(":")){
+                                observers.forEach {
+                                    it.addObject(text.substringBefore(":"))
+                                }
+                            } else {
+                                observers.forEach {
+                                    it.addProperty(text)
+                                }
                             }
                             //add(testWidget(text, "?"))
                             menu.isVisible = false
@@ -97,6 +100,7 @@ private fun testPanel(): JPanel =
                         menu.add(del)
                         menu.show(this@apply, 100, 100);
                     }
+
                 }
             })
         }
@@ -107,12 +111,40 @@ private fun testPanel(): JPanel =
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             alignmentX = Component.LEFT_ALIGNMENT
             alignmentY = Component.TOP_ALIGNMENT
+            val label = JLabel(key)
+            label.addMouseListener(object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        val clickedLabel = e.source as JLabel
+                        //TODO AO CLICAR AQUI
+                        // IF IS JSONoBJECT
+                        // model.jsonData = clickedObject
+                        //if(model.data.containsKey(clickedLabel.text) && model.data[clickedLabel.text] is JsonObject && model.jsonData != model.data[clickedLabel.text]){
+                          if(model.jsonObjectList.containsKey(clickedLabel.text) && model.jsonData != model.jsonObjectList[clickedLabel.text]){
+                            model.data = model.jsonObjectList[clickedLabel.text]?.properties as MutableMap<String, JsonValue>
+                            model.jsonData = model.jsonObjectList[clickedLabel.text]!!//model.data[clickedLabel.text] as JsonObject
+                            println(model.jsonData.toJsonString)
+                            /*
+                            if((model.data[clickedLabel.text] as JsonObject).properties == null)
+                                model.data = mutableMapOf<String, JsonValue>()
+                            else
+                                model.data = (model.data[clickedLabel.text] as JsonObject).properties as MutableMap<String, JsonValue>
+                        */
+                        }
 
-            add(JLabel(key))
+                        println("Clicked label text: ${clickedLabel.text}")
+                    }
+                }
+            })
+            add(label)
             val text = JTextField(value)
             text.addFocusListener(object : FocusAdapter() {
                 override fun focusLost(e: FocusEvent) {
                     println("perdeu foco: ${text.text}")
+                }
+
+                override fun focusGained(e: FocusEvent?) {
+                    println("ganhou foco: ${text.text}")
                 }
             })
             add(text)
