@@ -1,6 +1,4 @@
 import java.awt.Component
-import java.awt.Dimension
-import java.awt.GridLayout
 import java.awt.event.*
 import javax.swing.*
 //TODO DESCUBRIR COMO POSSO SELECIONAR UM DOS OBJETOS E ADICIONAR A ESSE, POR ENQUANTO SO DÁ PARA IR ADICIONANDO PROPRIEDADES NO 1 OBJETO
@@ -8,7 +6,7 @@ import javax.swing.*
 interface EditViewObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
-    fun propertyModified(key: String, newValue: JsonValue){ }
+    fun modifyProperty(key: String, newValue: JsonValue){ }
     fun addObject(key: String){ }
 }
 class EditorView(private val model: JsonObjectBuilder): JPanel() {
@@ -26,8 +24,8 @@ class EditorView(private val model: JsonObjectBuilder): JPanel() {
                 propertyRemoved(key)
             }
 
-            override fun propertyModified(key: String, newValue: JsonValue) {
-                //TODO modifica propriedade do widget
+            override fun modifyProperty(key: String, newValue: JsonValue) {
+                propertyModified(key, newValue)
             }
 
             override fun addObject(key: String) {
@@ -45,7 +43,21 @@ class EditorView(private val model: JsonObjectBuilder): JPanel() {
     }
 
     fun propertyRemoved(key: String){
-        println(model.jsonData.toJsonString)
+        //REMOVE WIDGET NOT WORKING
+        val find = components.find { it is JsonValue && it.name == key }
+        println(find)
+        find?.let {
+            println("Find: $find")
+            remove(find)
+        }
+        revalidate()
+        repaint()
+        println("no find")
+        //println(model.jsonData.toJsonString)
+    }
+
+    fun propertyModified(key: String, newValue: JsonValue) {
+        println("${key} : ${newValue}")
     }
 //esta parte pode fazer parte de uma view
 private fun testPanel(): JPanel =
@@ -79,10 +91,8 @@ private fun testPanel(): JPanel =
                         val deleteSelected = JButton("delete")
                         deleteSelected.addActionListener {
                             observers.forEach {
-                                it.removeProperty("")
+                                it.removeProperty("1")
                             }
-
-
                             println("Removed")
                         }
 
@@ -116,20 +126,14 @@ private fun testPanel(): JPanel =
                 override fun mouseClicked(e: MouseEvent) {
                     if (SwingUtilities.isLeftMouseButton(e)) {
                         val clickedLabel = e.source as JLabel
-                        //TODO AO CLICAR AQUI
-                        // IF IS JSONoBJECT
-                        // model.jsonData = clickedObject
+                        //TODO THIS SHOULD ALSO BE MOVED, IN THE VIEW THERE SHOULD BE NO LOGIC
+                        // THIS SHOULD CALL AN OBSERVER PERHAPS
                         //if(model.data.containsKey(clickedLabel.text) && model.data[clickedLabel.text] is JsonObject && model.jsonData != model.data[clickedLabel.text]){
                           if(model.jsonObjectList.containsKey(clickedLabel.text) && model.jsonData != model.jsonObjectList[clickedLabel.text]){
                             model.data = model.jsonObjectList[clickedLabel.text]?.properties as MutableMap<String, JsonValue>
                             model.jsonData = model.jsonObjectList[clickedLabel.text]!!//model.data[clickedLabel.text] as JsonObject
                             println(model.jsonData.toJsonString)
-                            /*
-                            if((model.data[clickedLabel.text] as JsonObject).properties == null)
-                                model.data = mutableMapOf<String, JsonValue>()
-                            else
-                                model.data = (model.data[clickedLabel.text] as JsonObject).properties as MutableMap<String, JsonValue>
-                        */
+
                         }
 
                         println("Clicked label text: ${clickedLabel.text}")
@@ -140,6 +144,12 @@ private fun testPanel(): JPanel =
             val text = JTextField(value)
             text.addFocusListener(object : FocusAdapter() {
                 override fun focusLost(e: FocusEvent) {
+                    if(text.text != "N/A") {
+                        observers.forEach {
+                            //TODO MOVE TO CONTROLLER OR MODEL
+                            it.modifyProperty(label.text, instanciateJson(text.text))
+                        }
+                    }
                     println("perdeu foco: ${text.text}")
                 }
 

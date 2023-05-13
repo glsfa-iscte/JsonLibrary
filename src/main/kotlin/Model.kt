@@ -72,7 +72,7 @@ data class JsonNull(val value: Any? = null) : JsonValue {
 interface JsonObjectObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
-    fun propertyModified(key: String, newValue: JsonValue){ }
+    fun modifyProperty(key: String, newValue: JsonValue){ }
     fun addObject(key: String){ }
 }
 
@@ -106,10 +106,9 @@ class JsonObjectBuilder {
     }
 
     fun modifyValue(key:String, newValue: JsonValue) {
-        data.remove(key)
         data.put(key, newValue)
         observers.forEach{
-            it.propertyModified(key, newValue)
+            it.modifyProperty(key, newValue)
         }
     }
     fun addObject(key:String){

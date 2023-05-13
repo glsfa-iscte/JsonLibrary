@@ -6,8 +6,8 @@ import javax.swing.JScrollPane
 import javax.swing.JTextArea
 
 //TODO
-// EDITOR MUST SHOW CONTENTS OF A JSON
-// MUST BE ABLE TO EDIT VISIBLE VALUES
+// EDITOR MUST SHOW CONTENTS OF A JSON                              DONE
+// MUST BE ABLE TO EDIT VISIBLE VALUES                              DONE
 // MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY
 // MUST HAVE A STACK TO PROVIDE UNDO
@@ -33,6 +33,9 @@ fun main() {
                 model.removeProperty(key)
             }
 
+            override fun modifyProperty(key: String, newValue: JsonValue) {
+                model.modifyValue(key, newValue)
+            }
             override fun addObject(key: String) {
                 println("2")
                 model.addObject(key)
@@ -47,9 +50,9 @@ fun main() {
 
         val right = JPanel()
         right.layout = GridLayout()
-        val srcArea = JTextArea()
+        val srcArea = TextAreaView(model)//JTextArea()
         srcArea.tabSize = 2
-        srcArea.text = "TODO"
+        //srcArea.text = "TODO"
         right.add(srcArea)
         add(right)
     }
