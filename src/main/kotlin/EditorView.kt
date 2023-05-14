@@ -1,8 +1,7 @@
 import java.awt.Component
 import java.awt.event.*
 import javax.swing.*
-//TODO DESCUBRIR COMO POSSO SELECIONAR UM DOS OBJETOS E ADICIONAR A ESSE, POR ENQUANTO SO DÁ PARA IR ADICIONANDO PROPRIEDADES NO 1 OBJETO
-// O NAME É UM JLABEL, SECALHAR DEVE SER MUDADO PARA UM JBUTTON, DE FORMA A AO CLICAR, SELECIONAR ESSE OBJETO PARA ADICIONAR PROPRIEDADES (MODEL.JSONDATA = OBJETO_SELECIONADO)
+//TODO perhaps move add if its a JsonObject and remove function to inside the widget and not in the panel, so that i can provide the correct widget to be removed
 interface EditViewObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
@@ -44,10 +43,8 @@ class EditorView(private val model: JsonObjectBuilder): JPanel() {
 
     fun propertyRemoved(key: String){
         //REMOVE WIDGET NOT WORKING
-        val find = components.find { it is JsonValue && it.name == key }
-        println(find)
+        val find = components.find { it is JPanel && it.name == key }
         find?.let {
-            println("Find: $find")
             remove(find)
         }
         revalidate()
@@ -84,7 +81,6 @@ private fun testPanel(): JPanel =
                                     it.addProperty(text)
                                 }
                             }
-                            //add(testWidget(text, "?"))
                             menu.isVisible = false
                         }
 
@@ -96,18 +92,9 @@ private fun testPanel(): JPanel =
                             println("Removed")
                         }
 
-                        val del = JButton("delete all")
-                        del.addActionListener {
-                            components.forEach {
-                                remove(it)
-                            }
-                            menu.isVisible = false
-                            revalidate()
-                            repaint()
-                        }
+
                         menu.add(add)
                         menu.add(deleteSelected)
-                        menu.add(del)
                         menu.show(this@apply, 100, 100);
                     }
 
@@ -118,6 +105,7 @@ private fun testPanel(): JPanel =
 
     fun testWidget(key: String, value: String): JPanel =
         JPanel().apply {
+            name = key
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             alignmentX = Component.LEFT_ALIGNMENT
             alignmentY = Component.TOP_ALIGNMENT
@@ -126,16 +114,11 @@ private fun testPanel(): JPanel =
                 override fun mouseClicked(e: MouseEvent) {
                     if (SwingUtilities.isLeftMouseButton(e)) {
                         val clickedLabel = e.source as JLabel
-                        //TODO THIS SHOULD ALSO BE MOVED, IN THE VIEW THERE SHOULD BE NO LOGIC
-                        // THIS SHOULD CALL AN OBSERVER PERHAPS
-                        //if(model.data.containsKey(clickedLabel.text) && model.data[clickedLabel.text] is JsonObject && model.jsonData != model.data[clickedLabel.text]){
-                          if(model.jsonObjectList.containsKey(clickedLabel.text) && model.jsonData != model.jsonObjectList[clickedLabel.text]){
+                        if(model.jsonObjectList.containsKey(clickedLabel.text) && model.jsonData != model.jsonObjectList[clickedLabel.text]){
                             model.data = model.jsonObjectList[clickedLabel.text]?.properties as MutableMap<String, JsonValue>
-                            model.jsonData = model.jsonObjectList[clickedLabel.text]!!//model.data[clickedLabel.text] as JsonObject
-                            println(model.jsonData.toJsonString)
+                            model.jsonData = model.jsonObjectList[clickedLabel.text]!!
 
                         }
-
                         println("Clicked label text: ${clickedLabel.text}")
                     }
                 }
