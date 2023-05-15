@@ -70,16 +70,19 @@ data class JsonNull(val value: Any? = null) : JsonValue {
 }
 
 interface JsonObjectObserver {
-    fun addProperty(key: String) { }
+    fun addProperty(key: String, parentObjectKey: String) { }
     fun removeProperty(key: String){ }
     fun modifyProperty(key: String, newValue: JsonValue){ }
-    fun addObject(key: String){ }
+    fun addObject(key: String, widgetId: Int){ }
 }
 
 class JsonObjectBuilder {
     var data = mutableMapOf<String, JsonValue>()
     var jsonData = JsonObject(data)
-    var jsonObjectList = mutableMapOf<String, JsonObject>()
+
+    //TODO ACHO QUE O DATA E JSONDATA DEVERIAM SER USADOS PARA "KEEP TRACK" DA ESTRUTURA, NO ENTANTO
+    // DEVERIA DE HAVER ALGO QUE ESPECIFICAVA QUAL DOS OBJETOS É QUE ESTÁ SELECIONADO AGORA, SENÃO COM O PARENT KEY, NAO VOU CONSEGUIR TER OBJETOS DOS ISCRITOS
+    //var selectedJsonObject = ...
     private val observers = mutableListOf<JsonObjectObserver>()
 
     fun addObserver(observer: JsonObjectObserver) {
@@ -90,14 +93,27 @@ class JsonObjectBuilder {
         observers.remove(observer)
     }
 
-    fun addProperty(key: String) {
-        data.put(key, JsonNull())
+    fun addProperty(key: String, parentObjectKey: String) {
+        println("Obj received $parentObjectKey")
+        val parentObject = data[parentObjectKey]
+        if(parentObjectKey == "" || parentObject !is JsonObject) {
+            data.put(key, JsonNull())
+        }
+        else{
+            //LIKE THIS IT WILL ADD TO A NESTED
+            val mutableMap = mutableMapOf<String, JsonValue>()
+
+            parentObject.properties?.let { mutableMap.putAll(it) }
+            mutableMap.put(key, JsonNull())
+            modifyValue(parentObjectKey, JsonObject(mutableMap))
+
+        }
         observers.forEach {
-            it.addProperty(key)
+            it.addProperty(key, parentObjectKey)
         }
         println("PROPERTY WAS ADDED")
     }
-
+    //TODO removeProperty, modifyValue and addObject will have to follow a logic similar to addProperty, in order to specify its parent, so that they work correctly
     fun removeProperty(key: String) {
         data.remove(key)
         observers.forEach {
@@ -111,12 +127,14 @@ class JsonObjectBuilder {
             it.modifyProperty(key, newValue)
         }
     }
-    fun addObject(key:String){
+    fun addObject(key:String, widgetId: Int){
         println("1")
+        println("GOT ID ${widgetId}")
+        //TODO O MODELO PODERIA CRIAR UM MAPA ONDE ASSOCIA O WIDGET E TALVEZ A KEY "${key:!:widgetId}" to JsonObject() A UM JSONOBJECT
+        // E ADICIONA A MAPA EM VEZ DE DATA
         data.put(key, JsonObject())
-        jsonObjectList.put(key, JsonObject(mutableMapOf<String, JsonValue>()))
         observers.forEach {
-            it.addObject(key)
+            it.addObject(key, widgetId)
         }
     }
 }

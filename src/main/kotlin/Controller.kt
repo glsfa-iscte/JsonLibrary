@@ -8,7 +8,7 @@ import javax.swing.JTextArea
 //TODO
 // EDITOR MUST SHOW CONTENTS OF A JSON                              DONE
 // MUST BE ABLE TO EDIT VISIBLE VALUES                              DONE
-// MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT
+// MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT       (IN ROOT JSONOBJEC)
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY
 // MUST HAVE A STACK TO PROVIDE UNDO
 
@@ -25,8 +25,8 @@ fun main() {
 
         val editorView = EditorView(model)
         editorView.addObserver(object : EditViewObserver{
-            override fun addProperty(key: String) {
-                model.addProperty(key)
+            override fun addProperty(key: String, parentObjectKey: String) {
+                model.addProperty(key, parentObjectKey)
             }
 
             override fun removeProperty(key: String) {
@@ -36,9 +36,9 @@ fun main() {
             override fun modifyProperty(key: String, newValue: JsonValue) {
                 model.modifyValue(key, newValue)
             }
-            override fun addObject(key: String) {
+            override fun addObject(key: String, widgetId: Int) {
                 println("2")
-                model.addObject(key)
+                model.addObject(key, widgetId)
             }
         })
         val scrollPane = JScrollPane(editorView).apply {
