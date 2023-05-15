@@ -1,21 +1,24 @@
+import java.awt.Color
 import java.awt.Component
 import java.awt.event.*
 import javax.swing.*
-
+//TODO PASS A MODEL AND CHECK IF IT SHOWS UP FINE
+// REMOVE ADDOBJECT SINCE ITS A JUST A PROPERY IN DISGUISE          DONE
+// REMOVE WIDGET ID                                                 DONE
+// modify PROPERTY ACHO QUE TINHA QUE TER REFERENCIA AO NOVO TIPO
+// CREATE A PANEL FOR EACH JSON OBJECT AND THEN FOR EACH ARRAY      WORKING ON IT
 interface EditViewObserver {
-    fun addProperty(key: String, parentObjectKey: String) { }
+    fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
     fun modifyProperty(key: String, newValue: JsonValue){ }
-    fun addObject(key: String, widgetId: Int){ }
+    //fun addObject(key: String, widgetId: Int){ }
 }
 class EditorView(val model: JsonObjectBuilder): JPanel() {
     private val observers: MutableList<EditViewObserver> = mutableListOf()
-    private var widgetID: Int = 1
     fun addObserver(observer: EditViewObserver) = observers.add(observer)
     init{
         model.addObserver(object: JsonObjectObserver{
-            //ATENCAO AOS NOMES JA QUE PODE LEVAR AO NÃO FUNCIONAMENTO
-            override fun addProperty(key: String, parentObjectKey: String) {
+            override fun addProperty(key: String) {
                 propertyAdded(key)
             }
 
@@ -27,22 +30,24 @@ class EditorView(val model: JsonObjectBuilder): JPanel() {
                 propertyModified(key, newValue)
             }
 
-            override fun addObject(key: String, widgetId: Int) {
+            /*override fun addObject(key: String, widgetId: Int) {
                 println("3")
                 propertyAdded(key)
             }
+
+             */
         })
-    testPanel()
+        add(JsonObjectPanel())
     }
 
     fun propertyAdded(key: String){
-        add(TestWidget(key, "N/A"))
+        add(JsonObjectProperty(key, "N/A"))
         revalidate()
         repaint()
     }
 
     fun propertyRemoved(key: String){
-        val find = components.find { it is TestWidget && it.getKey() == key}
+        val find = components.find { it is JsonObjectProperty && it.getKey() == key}
         find?.let {
             remove(find)
         }
@@ -51,68 +56,67 @@ class EditorView(val model: JsonObjectBuilder): JPanel() {
     }
 
     fun propertyModified(key: String, newValue: JsonValue) {
+        //TODO CASO A NOVA PROPRIEDADE SEJA UM JSOOBJECT ELE VAI TER QUE CRIAR UM NOVO PAINEL
         println("${key} : ${newValue}")
     }
-//esta parte pode fazer parte de uma view
-private fun testPanel(): JPanel =
-        this.apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            alignmentX = Component.LEFT_ALIGNMENT
-            alignmentY = Component.TOP_ALIGNMENT
+//este painel irá representar cada nível de um json object portanto, ao ser adicionado um novo objeto, ele cria um novo painel para o mesmo
+private inner class JsonObjectPanel : JPanel() {
+    init {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        alignmentX = Component.LEFT_ALIGNMENT
+        alignmentY = Component.TOP_ALIGNMENT
+        background = Color.RED
 
-            // menu
-            addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent) {
-                    if (SwingUtilities.isRightMouseButton(e)) {
-                        val menu = JPopupMenu("Message")
-                        val add = JButton("add")
-                        add.addActionListener {
-                            val text = JOptionPane.showInputDialog("text")
-                            //this will call this class's addProperty, which is responsible for adding a new test widget and will also warn every observer of it
-                            if(text.endsWith(":")){
-                                observers.forEach {
-                                    it.addObject(text.substringBefore(":"), widgetID)
-                                }
-                            } else {
-                                observers.forEach {
-                                    it.addProperty(text, "")
-                                }
-                            }
-                            menu.isVisible = false
-                        }
-
-                        /*val deleteSelected = JButton("delete")
-                        deleteSelected.addActionListener {
+        // menu
+        addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    val menu = JPopupMenu("Message")
+                    val add = JButton("add")
+                    add.addActionListener {
+                        val text = JOptionPane.showInputDialog("text")
+                        //this will call this class's addProperty, which is responsible for adding a new test widget and will also warn every observer of it
+                        /*if(text.endsWith(":")){
                             observers.forEach {
-                                it.removeProperty("1")
+                                it.addObject(text.substringBefore(":"), widgetID)
                             }
-                            println("Removed")
-                        }
-
-                         */
-                        menu.add(add)
-                        //menu.add(deleteSelected)
-                        menu.show(this@apply, 100, 100);
+                        } else {
+                       */     observers.forEach {
+                        it.addProperty(text)
+                    }
+                        //}
+                        menu.isVisible = false
                     }
 
+                    /*val deleteSelected = JButton("delete")
+                    deleteSelected.addActionListener {
+                        observers.forEach {
+                            it.removeProperty("1")
+                        }
+                        println("Removed")
+                    }
+
+                     */
+                    menu.add(add)
+                    //menu.add(deleteSelected)
+                    menu.show(this@JsonObjectPanel, 100, 100);
                 }
-            })
-        }
+
+            }
+        })
+    }
+}
 
 
-    inner class TestWidget(private val key: String, private var value: String) : JPanel() {
+
+    inner class JsonObjectProperty(private val key: String, private var value: String) : JPanel() {
 
         private val label: JLabel
         private val textField: JTextField
-        private val id:Int
-
         init {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             alignmentX = Component.LEFT_ALIGNMENT
             alignmentY = Component.TOP_ALIGNMENT
-
-            id = widgetID
-            widgetID+=1
 
             label = JLabel(key)
             add(label)
@@ -140,7 +144,7 @@ private fun testPanel(): JPanel =
                         add.addActionListener {
                             val text = JOptionPane.showInputDialog("text")
                             //this will call this class's addProperty, which is responsible for adding a new test widget and will also warn every observer of it
-                            if(text.endsWith(":")){
+                            /*if(text.endsWith(":")){
                                 observers.forEach {
                                     println("0")
                                     //ELE INFORMA QUE VAI SER ADICIONADO UM OBJ NO WIDJET COM O ID X
@@ -148,10 +152,10 @@ private fun testPanel(): JPanel =
                                     it.addObject(text.substringBefore(":"), id+1)
                                 }
                             } else {
-                                observers.forEach {
-                                    it.addProperty(text, key)
+                             */   observers.forEach {
+                                    it.addProperty(text)
                                 }
-                            }
+                            //}
                             menu.isVisible = false
                         }
 
@@ -163,12 +167,10 @@ private fun testPanel(): JPanel =
                         }
                         menu.add(add)
                         menu.add(deleteSelected)
-                        menu.show(this@TestWidget, 100, 100);
+                        menu.show(this@JsonObjectProperty, 100, 100);
                     }
                 }
             })
-
-            println("NEW WIDGET ADDED ID:${id} -> ${key} : ${value}")
         }
 
         fun getKey(): String {

@@ -1,7 +1,3 @@
-/*
-TODO
-CHANGE MODEL SO THAT ITS ELEMENTS ARE OBSERVABLE
- */
 /**
  * Json value - This interface represents a value in json, string in double quotes, or a number, or true or false or null, or an object or an array
  *
@@ -70,19 +66,14 @@ data class JsonNull(val value: Any? = null) : JsonValue {
 }
 
 interface JsonObjectObserver {
-    fun addProperty(key: String, parentObjectKey: String) { }
+    fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
     fun modifyProperty(key: String, newValue: JsonValue){ }
-    fun addObject(key: String, widgetId: Int){ }
 }
 
 class JsonObjectBuilder {
     var data = mutableMapOf<String, JsonValue>()
     var jsonData = JsonObject(data)
-
-    //TODO ACHO QUE O DATA E JSONDATA DEVERIAM SER USADOS PARA "KEEP TRACK" DA ESTRUTURA, NO ENTANTO
-    // DEVERIA DE HAVER ALGO QUE ESPECIFICAVA QUAL DOS OBJETOS É QUE ESTÁ SELECIONADO AGORA, SENÃO COM O PARENT KEY, NAO VOU CONSEGUIR TER OBJETOS DOS ISCRITOS
-    //var selectedJsonObject = ...
     private val observers = mutableListOf<JsonObjectObserver>()
 
     fun addObserver(observer: JsonObjectObserver) {
@@ -93,12 +84,14 @@ class JsonObjectBuilder {
         observers.remove(observer)
     }
 
-    fun addProperty(key: String, parentObjectKey: String) {
-        println("Obj received $parentObjectKey")
+    fun addProperty(key: String) {
+        /*println("Obj received $parentObjectKey")
         val parentObject = data[parentObjectKey]
         if(parentObjectKey == "" || parentObject !is JsonObject) {
-            data.put(key, JsonNull())
-        }
+
+            */data.put(key, JsonNull())
+
+        /*}
         else{
             //LIKE THIS IT WILL ADD TO A NESTED
             val mutableMap = mutableMapOf<String, JsonValue>()
@@ -108,8 +101,10 @@ class JsonObjectBuilder {
             modifyValue(parentObjectKey, JsonObject(mutableMap))
 
         }
+
+         */
         observers.forEach {
-            it.addProperty(key, parentObjectKey)
+            it.addProperty(key)
         }
         println("PROPERTY WAS ADDED")
     }
@@ -127,16 +122,15 @@ class JsonObjectBuilder {
             it.modifyProperty(key, newValue)
         }
     }
-    fun addObject(key:String, widgetId: Int){
+    /*fun addObject(key:String){
         println("1")
-        println("GOT ID ${widgetId}")
-        //TODO O MODELO PODERIA CRIAR UM MAPA ONDE ASSOCIA O WIDGET E TALVEZ A KEY "${key:!:widgetId}" to JsonObject() A UM JSONOBJECT
-        // E ADICIONA A MAPA EM VEZ DE DATA
         data.put(key, JsonObject())
         observers.forEach {
-            it.addObject(key, widgetId)
+            it.addObject(key)
         }
     }
+
+     */
 }
 /**
  * Json object - This dataclass is used to represent a Json Object

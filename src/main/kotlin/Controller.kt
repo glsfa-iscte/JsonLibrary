@@ -25,8 +25,8 @@ fun main() {
 
         val editorView = EditorView(model)
         editorView.addObserver(object : EditViewObserver{
-            override fun addProperty(key: String, parentObjectKey: String) {
-                model.addProperty(key, parentObjectKey)
+            override fun addProperty(key: String) {
+                model.addProperty(key)
             }
 
             override fun removeProperty(key: String) {
@@ -35,10 +35,6 @@ fun main() {
 
             override fun modifyProperty(key: String, newValue: JsonValue) {
                 model.modifyValue(key, newValue)
-            }
-            override fun addObject(key: String, widgetId: Int) {
-                println("2")
-                model.addObject(key, widgetId)
             }
         })
         val scrollPane = JScrollPane(editorView).apply {
@@ -50,9 +46,8 @@ fun main() {
 
         val right = JPanel()
         right.layout = GridLayout()
-        val srcArea = TextAreaView(model)//JTextArea()
+        val srcArea = TextAreaView(model)
         srcArea.tabSize = 2
-        //srcArea.text = "TODO"
         right.add(srcArea)
         add(right)
     }
