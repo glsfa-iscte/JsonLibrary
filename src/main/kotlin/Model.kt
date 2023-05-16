@@ -68,12 +68,22 @@ data class JsonNull(val value: Any? = null) : JsonValue {
 interface JsonObjectObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
-    fun modifyProperty(key: String, newValue: JsonValue){ }
+    fun modifyProperty(key: String, newValue: String){ }
 }
 
-class JsonObjectBuilder {
+class JsonObjectBuilder(obj:JsonObject?=null) {
     var data = mutableMapOf<String, JsonValue>()
     var jsonData = JsonObject(data)
+    /*init{
+        val mutableMap = mutableMapOf<String, JsonValue>()
+
+        obj.properties?.let { mutableMap.putAll(it) }
+        data = mutableMap
+        jsonData = obj
+        println(jsonData.toJsonString)
+    }
+
+     */
     private val observers = mutableListOf<JsonObjectObserver>()
 
     fun addObserver(observer: JsonObjectObserver) {
@@ -85,6 +95,7 @@ class JsonObjectBuilder {
     }
 
     fun addProperty(key: String) {
+        println("2")
         /*println("Obj received $parentObjectKey")
         val parentObject = data[parentObjectKey]
         if(parentObjectKey == "" || parentObject !is JsonObject) {
@@ -116,12 +127,26 @@ class JsonObjectBuilder {
         }
     }
 
-    fun modifyValue(key:String, newValue: JsonValue) {
-        data.put(key, newValue)
+    fun modifyValue(key:String, newValue: String) {
+        val inputReturnType = parseToOriginalReturnType(newValue)
+        val jsonValue = if(inputReturnType == "") JsonObject() else instanciateJson(inputReturnType)
+        data.put(key, jsonValue)
+        println(data)
         observers.forEach{
-            it.modifyProperty(key, newValue)
+            it.modifyProperty(key, jsonValue.toJsonString)
         }
     }
+    fun parseToOriginalReturnType(input: String): Any? {
+        return when {
+            input.contains(":") -> ""
+            input.isNullOrBlank() -> null
+            input.toIntOrNull() != null -> input.toInt()
+            input.toDoubleOrNull() != null -> input.toDouble()
+            input.toBooleanStrictOrNull() != null -> input.toBoolean()
+            else -> input
+        }
+    }
+
     /*fun addObject(key:String){
         println("1")
         data.put(key, JsonObject())

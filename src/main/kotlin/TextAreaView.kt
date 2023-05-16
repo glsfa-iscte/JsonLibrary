@@ -12,7 +12,7 @@ class TextAreaView(private val model: JsonObjectBuilder): JTextArea(){
                 text = model.jsonData.toJsonString
             }
 
-            override fun modifyProperty(key: String, newValue: JsonValue) {
+            override fun modifyProperty(key: String, newValue: String) {
                 text = model.jsonData.toJsonString
             }
 

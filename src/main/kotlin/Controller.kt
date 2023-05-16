@@ -13,6 +13,19 @@ import javax.swing.JTextArea
 // MUST HAVE A STACK TO PROVIDE UNDO
 
 fun main() {
+    /*val inscricoes04 = JsonObject(mapOf(
+        "uc" to JsonString("PA"),
+        "ects" to JsonNumber(6.0),
+        "data-exame" to JsonNull(),
+        "inscritos" to JsonObject(mapOf(
+                "numero" to JsonNumber(101101),
+                "nome" to JsonString("Dave Farley"),
+                "internacional" to JsonBoolean(true)
+            ))
+        )
+    )
+
+     */
     val model = JsonObjectBuilder()
 
     val frame = JFrame("Josue - JSON Object Editor").apply {
@@ -23,9 +36,11 @@ fun main() {
         val left = JPanel()
         left.layout = GridLayout()
 
-        val editorView = EditorView(model)
+        val editorView = JsonObjectPanel(model)//EditorView(model)
+
         editorView.addObserver(object : EditViewObserver{
             override fun addProperty(key: String) {
+                println("1")
                 model.addProperty(key)
             }
 
@@ -33,7 +48,7 @@ fun main() {
                 model.removeProperty(key)
             }
 
-            override fun modifyProperty(key: String, newValue: JsonValue) {
+            override fun modifyProperty(key: String, newValue: String) {
                 model.modifyValue(key, newValue)
             }
         })
