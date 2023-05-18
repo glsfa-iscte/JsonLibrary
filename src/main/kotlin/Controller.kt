@@ -8,26 +8,11 @@ import javax.swing.JTextArea
 //TODO
 // EDITOR MUST SHOW CONTENTS OF A JSON                              DONE
 // MUST BE ABLE TO EDIT VISIBLE VALUES                              DONE
-// MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT       (IN ROOT JSONOBJEC)
+// MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT       DONE
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY
 // MUST HAVE A STACK TO PROVIDE UNDO
-
+val model = JsonObjectBuilder()
 fun main() {
-    /*val inscricoes04 = JsonObject(mapOf(
-        "uc" to JsonString("PA"),
-        "ects" to JsonNumber(6.0),
-        "data-exame" to JsonNull(),
-        "inscritos" to JsonObject(mapOf(
-                "numero" to JsonNumber(101101),
-                "nome" to JsonString("Dave Farley"),
-                "internacional" to JsonBoolean(true)
-            ))
-        )
-    )
-
-     */
-    val model = JsonObjectBuilder()
-
     val frame = JFrame("Josue - JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         layout = GridLayout(0, 2)
@@ -40,7 +25,6 @@ fun main() {
 
         editorView.addObserver(object : EditViewObserver{
             override fun addProperty(key: String) {
-                println("1")
                 model.addProperty(key)
             }
 
@@ -48,8 +32,8 @@ fun main() {
                 model.removeProperty(key)
             }
 
-            override fun modifyProperty(key: String, newValue: String) {
-                model.modifyValue(key, newValue)
+            override fun modifyProperty(key: String, newValue: String, oldValue: String) {
+                model.modifyValue(key, newValue, oldValue)
             }
         })
         val scrollPane = JScrollPane(editorView).apply {
@@ -67,4 +51,34 @@ fun main() {
         add(right)
     }
     frame.isVisible = true
+}
+fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
+    if (newValue == "{ }") {
+        val newNestedModel = JsonObjectBuilder()
+        val newNestedPanel = JsonObjectPanel(newNestedModel)
+        //newJPanel.maximumSize = Dimension(Int.MAX_VALUE-50, Int.MAX_VALUE)
+        //ISTO TRATA DE LIGAR O NESTED AO PAI
+        if(parentJPanel is JsonObjectPanel){
+            parentJPanel.model.data.put(key, newNestedModel.jsonData)
+            parentJPanel.nestedPanels.put(key, newNestedPanel)
+        }
+        // Add observers to the new panel
+        newNestedPanel.addObserver(object : EditViewObserver {
+            override fun addProperty(key: String) {
+                newNestedModel.addProperty(key)
+                model.refreshModel()
+            }
+
+            override fun removeProperty(key: String) {
+                newNestedModel.removeProperty(key)
+                model.refreshModel()
+            }
+
+            override fun modifyProperty(key: String, newValue: String, oldValue:String) {
+                newNestedModel.modifyValue(key, newValue, oldValue)
+                model.refreshModel()
+            }
+        })
+        parentJPanel.add(newNestedPanel)
+    }
 }

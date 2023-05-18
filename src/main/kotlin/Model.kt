@@ -68,22 +68,14 @@ data class JsonNull(val value: Any? = null) : JsonValue {
 interface JsonObjectObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
-    fun modifyProperty(key: String, newValue: String){ }
+    fun modifyProperty(key: String, newValue: String, oldValue: String){ }
+    fun refreshModel(){ }
 }
 
 class JsonObjectBuilder(obj:JsonObject?=null) {
     var data = mutableMapOf<String, JsonValue>()
     var jsonData = JsonObject(data)
-    /*init{
-        val mutableMap = mutableMapOf<String, JsonValue>()
 
-        obj.properties?.let { mutableMap.putAll(it) }
-        data = mutableMap
-        jsonData = obj
-        println(jsonData.toJsonString)
-    }
-
-     */
     private val observers = mutableListOf<JsonObjectObserver>()
 
     fun addObserver(observer: JsonObjectObserver) {
@@ -95,45 +87,39 @@ class JsonObjectBuilder(obj:JsonObject?=null) {
     }
 
     fun addProperty(key: String) {
-        println("2")
-        /*println("Obj received $parentObjectKey")
-        val parentObject = data[parentObjectKey]
-        if(parentObjectKey == "" || parentObject !is JsonObject) {
-
-            */data.put(key, JsonNull())
-
-        /*}
-        else{
-            //LIKE THIS IT WILL ADD TO A NESTED
-            val mutableMap = mutableMapOf<String, JsonValue>()
-
-            parentObject.properties?.let { mutableMap.putAll(it) }
-            mutableMap.put(key, JsonNull())
-            modifyValue(parentObjectKey, JsonObject(mutableMap))
-
-        }
-
-         */
+        println("2 ${data}")
+        data.put(key, JsonNull())
         observers.forEach {
             it.addProperty(key)
         }
-        println("PROPERTY WAS ADDED")
     }
-    //TODO removeProperty, modifyValue and addObject will have to follow a logic similar to addProperty, in order to specify its parent, so that they work correctly
     fun removeProperty(key: String) {
         data.remove(key)
         observers.forEach {
             it.removeProperty(key)
         }
     }
-
-    fun modifyValue(key:String, newValue: String) {
+//TODO VER COMO POSSO MELHORAR ESTA PARTE
+    fun modifyValue(key:String, newValue: String, oldValue: String) {
+        //println("RECEIVED : NEW ${newValue} OLD ${oldValue}")
         val inputReturnType = parseToOriginalReturnType(newValue)
-        val jsonValue = if(inputReturnType == "") JsonObject() else instanciateJson(inputReturnType)
-        data.put(key, jsonValue)
-        println(data)
-        observers.forEach{
-            it.modifyProperty(key, jsonValue.toJsonString)
+        val jsonValue = if (inputReturnType == "") JsonObject()
+        else {
+            if(newValue == "N/A") JsonNull()
+            else instanciateJson(inputReturnType)
+        }
+        //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
+        if(oldValue != jsonValue.toJsonString) {
+            data.put(key, jsonValue)
+            observers.forEach {
+                it.modifyProperty(key, jsonValue.toJsonString,instanciateJson(parseToOriginalReturnType(newValue)).toJsonString)
+            }
+        }
+    }
+    //ADICIONADO DE FORMA A AVISAR OS OUVINTES, NESTE CASO SO OS TEXTAREAVIEW, DE QUE UM NESTED FOI ADICIONADO E O TEXTO TEM QUE SER UPDATED
+    fun refreshModel(){
+        observers.forEach {
+            it.refreshModel()
         }
     }
     fun parseToOriginalReturnType(input: String): Any? {
@@ -146,16 +132,11 @@ class JsonObjectBuilder(obj:JsonObject?=null) {
             else -> input
         }
     }
-
-    /*fun addObject(key:String){
-        println("1")
-        data.put(key, JsonObject())
-        observers.forEach {
-            it.addObject(key)
-        }
+    fun compareStrings(string1: String, string2: String): Boolean {
+        val transformedString1 = string1.trim().replace("\\\"", "").trim()
+        val transformedString2 = string2.trim().replace("\\\"", "").trim()
+        return transformedString1 == transformedString2
     }
-
-     */
 }
 /**
  * Json object - This dataclass is used to represent a Json Object
