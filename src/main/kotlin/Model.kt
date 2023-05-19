@@ -72,10 +72,9 @@ interface JsonObjectObserver {
     fun refreshModel(){ }
 }
 
-class JsonObjectBuilder(obj:JsonObject?=null) {
+class JsonObjectBuilder() {
     var data = mutableMapOf<String, JsonValue>()
     var jsonData = JsonObject(data)
-
     private val observers = mutableListOf<JsonObjectObserver>()
 
     fun addObserver(observer: JsonObjectObserver) {
@@ -87,7 +86,6 @@ class JsonObjectBuilder(obj:JsonObject?=null) {
     }
 
     fun addProperty(key: String) {
-        println("2 ${data}")
         data.put(key, JsonNull())
         observers.forEach {
             it.addProperty(key)
@@ -99,24 +97,19 @@ class JsonObjectBuilder(obj:JsonObject?=null) {
             it.removeProperty(key)
         }
     }
-//TODO VER COMO POSSO MELHORAR ESTA PARTE
     fun modifyValue(key:String, newValue: String, oldValue: String) {
         //println("RECEIVED : NEW ${newValue} OLD ${oldValue}")
-        val inputReturnType = parseToOriginalReturnType(newValue)
-        val jsonValue = if (inputReturnType == "") JsonObject()
-        else {
-            if(newValue == "N/A") JsonNull()
-            else instanciateJson(inputReturnType)
-        }
+        val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+
         //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
         if(oldValue != jsonValue.toJsonString) {
             data.put(key, jsonValue)
             observers.forEach {
-                it.modifyProperty(key, jsonValue.toJsonString,instanciateJson(parseToOriginalReturnType(newValue)).toJsonString)
+                it.modifyProperty(key, jsonValue.toJsonString, instanciateJson(parseToOriginalReturnType(newValue)).toJsonString)
             }
         }
     }
-    //ADICIONADO DE FORMA A AVISAR OS OUVINTES, NESTE CASO SO OS TEXTAREAVIEW, DE QUE UM NESTED FOI ADICIONADO E O TEXTO TEM QUE SER UPDATED
+    //ADICIONADO DE FORMA A AVISAR OS OUVINTES, NESTE CASO SO OS TEXTAREAVIEW (JÁ QUE OS OUTROS NÃO IMPEMENTAM ESTE METODO), DE QUE UM NESTED FOI ADICIONADO E O TEXTO TEM QUE SER UPDATED
     fun refreshModel(){
         observers.forEach {
             it.refreshModel()
@@ -124,8 +117,9 @@ class JsonObjectBuilder(obj:JsonObject?=null) {
     }
     fun parseToOriginalReturnType(input: String): Any? {
         return when {
-            input.contains(":") -> ""
-            input.isNullOrBlank() -> null
+            input == ":" -> mutableMapOf<Any, Any>()
+            input == "N/A" -> null
+            input.isNullOrBlank() -> mutableListOf<Any>()
             input.toIntOrNull() != null -> input.toInt()
             input.toDoubleOrNull() != null -> input.toDouble()
             input.toBooleanStrictOrNull() != null -> input.toBoolean()
@@ -138,6 +132,56 @@ class JsonObjectBuilder(obj:JsonObject?=null) {
         return transformedString1 == transformedString2
     }
 }
+
+interface JsonArrayObserver {
+    fun addValue(value: String) { }
+    fun removeValue(value: String){ }
+    fun modifyProperty(key: String, newValue: String, oldValue: String){ }
+    fun refreshModel(){ }
+}
+/*
+//TODO MUDAR O NOME DATA E JSONDATA JA QUE PODE CONFUNDIR COM O DO JSONOBJECTBUILDER
+class JsonArrayBuilder() {
+    var data = mutableListOf<JsonValue>()
+    var jsonData = JsonArray(data)
+    private val observers = mutableListOf<JsonArrayObserver>()
+
+    fun addObserver(observer: JsonArrayObserver) {
+        observers.add(observer)
+    }
+
+    fun removeObserver(observer: JsonArrayObserver) {
+        observers.remove(observer)
+    }
+
+    fun addValue(value: String) {
+        val instanciatedInput = instanciateJson(parseToOriginalReturnType(value))
+        data.add(instanciatedInput)
+        observers.forEach {
+            it.addValue(value)
+        }
+    }
+    fun removeValue(value: String) {
+        val instanciatedInput = instanciateJson(parseToOriginalReturnType(value))
+        data.remove(instanciatedInput)
+        observers.forEach {
+            it.removeValue(value)
+        }
+    }
+    fun parseToOriginalReturnType(input: String): Any? {
+        return when {
+            input == ":" -> mutableMapOf<Any, Any>()
+            input == "N/A" -> null
+            input.isNullOrBlank() -> mutableListOf<Any>()
+            input.toIntOrNull() != null -> input.toInt()
+            input.toDoubleOrNull() != null -> input.toDouble()
+            input.toBooleanStrictOrNull() != null -> input.toBoolean()
+            else -> input
+        }
+    }
+}
+
+ */
 /**
  * Json object - This dataclass is used to represent a Json Object
  *
@@ -156,17 +200,23 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
     /**
      * To json string If the Json Object is empty, it returns the representation of an empty Json Object, { } else it returns each name value pair as "name" : value
      */
+    //ELVIS OPERATOR WAS REMOVED IN FAVOUR OF THE CHECK, SO THAT IF PROPERIES IS NULL OR EMPTY, IT RETURNS "{}" WHERE AS BEFORE IT ONLY RETURNED THAT IF PROPERTIES WAS NULL
+    //TEST SUITE PASSED
     override val toJsonString: String
         get() {
-            return properties?.entries?.joinToString(
-                separator = ",\n",
-                // Removed to add "${"\t".repeat(depth)} in Json Array, so that Json Values are properly indented and so that Json Value doesnt have depth, causing every jsonValue to have init
-                //prefix = "${"\t".repeat(depth-1)}{\n",
-                prefix = "{\n",
-                postfix = "\n${"\t".repeat(depth-1)}}"
-            ) { (name, value) ->
-                "${"\t".repeat(depth)} \"$name\" : ${value.toJsonString.trimStart().trimEnd()}"
-            } ?: "{ }"
+            return if (properties.isNullOrEmpty()) {
+                "{ }"
+            } else {
+                properties.entries.joinToString(
+                    separator = ",\n",
+                    // Removed to add "${"\t".repeat(depth)} in Json Array, so that Json Values are properly indented and so that Json Value doesnt have depth, causing every jsonValue to have init
+                    //prefix = "${"\t".repeat(depth-1)}{\n",
+                    prefix = "{\n",
+                    postfix = "\n${"\t".repeat(depth - 1)}}"
+                ) { (name, value) ->
+                    "${"\t".repeat(depth)} \"$name\" : ${value.toJsonString.trimStart().trimEnd()}"
+                }
+            }
         }
 
     override fun accept(visitor: Visitor) {

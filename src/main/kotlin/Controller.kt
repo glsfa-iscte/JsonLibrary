@@ -11,6 +11,8 @@ import javax.swing.JTextArea
 // MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT       DONE
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY
 // MUST HAVE A STACK TO PROVIDE UNDO
+// ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAVE SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT
+// IF ITS A createNestedPanel IF THE VALUE OF THE PROPERTY THAT CREATED IT CHANGED, THE VIEW IS NOT REMOVING THE PANEL DONE
 val model = JsonObjectBuilder()
 fun main() {
     val frame = JFrame("Josue - JSON Object Editor").apply {
@@ -53,10 +55,10 @@ fun main() {
     frame.isVisible = true
 }
 fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
+    println("NEW VALUE RECEIVED${ newValue }")
     if (newValue == "{ }") {
         val newNestedModel = JsonObjectBuilder()
         val newNestedPanel = JsonObjectPanel(newNestedModel)
-        //newJPanel.maximumSize = Dimension(Int.MAX_VALUE-50, Int.MAX_VALUE)
         //ISTO TRATA DE LIGAR O NESTED AO PAI
         if(parentJPanel is JsonObjectPanel){
             parentJPanel.model.data.put(key, newNestedModel.jsonData)
@@ -80,5 +82,10 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
             }
         })
         parentJPanel.add(newNestedPanel)
+    }
+    if(newValue == "[ ]"){
+        //TODO CREATE A NESTED PANEL FOR THE JSON ARRAY,
+        // IN VIEW ADD FUNCTIONALITY TO HAVE BUTTONS AND A PANEL FOR A JSONARRAY
+        println("IN")
     }
 }

@@ -4,18 +4,13 @@ import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.event.*
 import javax.swing.*
-//TODO PASS A MODEL AND CHECK IF IT SHOWS UP FINE
-// REMOVE ADDOBJECT SINCE ITS A JUST A PROPERY IN DISGUISE          DONE
-// REMOVE WIDGET ID                                                 DONE
-// modify PROPERTY ACHO QUE TINHA QUE TER REFERENCIA AO NOVO TIPO
+//TODO
 // CREATE A PANEL FOR EACH JSON OBJECT AND THEN FOR EACH ARRAY      WORKING ON IT
 interface EditViewObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
     fun modifyProperty(key: String, newValue: String, oldValue: String){ }
 }
-    //este painel irá representar cada nível de um json object portanto, ao ser adicionado um novo objeto, ele cria um novo painel para o mesmo
-    //private inner
     class JsonObjectPanel(val model: JsonObjectBuilder) : JPanel() {
         private val observers: MutableList<EditViewObserver> = mutableListOf()
         val nestedPanels: MutableMap<String, JsonObjectPanel> = mutableMapOf()
@@ -85,6 +80,11 @@ interface EditViewObserver {
 
 
         fun propertyModified(key: String, newValue: String, oldValue: String) {
+            //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
+            if(nestedPanels.containsKey(key)){
+                remove(nestedPanels[key])
+                nestedPanels.remove(key)
+            }
             //ADDED TO UPDATE THE oldValue
             val properties = components.filterIsInstance<JsonObjectProperty>()
             val property = properties.find { it.getKey() == key }

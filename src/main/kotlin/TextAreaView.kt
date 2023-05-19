@@ -21,7 +21,7 @@ class TextAreaView(private val model: JsonObjectBuilder): JTextArea(){
 
             override fun refreshModel() {
                 text = model.jsonData.toJsonString
-                println(model.data)
+                println("Refreshed "+model.data)
             }
         })
     }
