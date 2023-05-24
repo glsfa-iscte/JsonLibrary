@@ -136,10 +136,10 @@ class JsonObjectBuilder() {
 interface JsonArrayObserver {
     fun addValue(value: String) { }
     fun removeValue(value: String){ }
-    fun modifyProperty(key: String, newValue: String, oldValue: String){ }
+    fun modifyValue(key: String, newValue: String, oldValue: String){ }
     fun refreshModel(){ }
 }
-/*
+
 //TODO MUDAR O NOME DATA E JSONDATA JA QUE PODE CONFUNDIR COM O DO JSONOBJECTBUILDER
 class JsonArrayBuilder() {
     var data = mutableListOf<JsonValue>()
@@ -168,6 +168,19 @@ class JsonArrayBuilder() {
             it.removeValue(value)
         }
     }
+    fun modifyValue(key:String, newValue: String, oldValue: String) {
+        //println("RECEIVED : NEW ${newValue} OLD ${oldValue}")
+    /*    val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+
+        //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
+        if(oldValue != jsonValue.toJsonString) {
+            data.put(key, jsonValue)
+            observers.forEach {
+                it.modifyProperty(key, jsonValue.toJsonString, instanciateJson(parseToOriginalReturnType(newValue)).toJsonString)
+            }
+        }
+     */
+    }
     fun parseToOriginalReturnType(input: String): Any? {
         return when {
             input == ":" -> mutableMapOf<Any, Any>()
@@ -180,8 +193,6 @@ class JsonArrayBuilder() {
         }
     }
 }
-
- */
 /**
  * Json object - This dataclass is used to represent a Json Object
  *

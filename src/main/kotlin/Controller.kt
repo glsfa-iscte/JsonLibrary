@@ -11,8 +11,9 @@ import javax.swing.JTextArea
 // MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT       DONE
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY
 // MUST HAVE A STACK TO PROVIDE UNDO
-// ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAVE SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT
+// ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAS SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT, either change the model or change call "properties?.values?.updateDepth(depth)"
 // IF ITS A createNestedPanel IF THE VALUE OF THE PROPERTY THAT CREATED IT CHANGED, THE VIEW IS NOT REMOVING THE PANEL DONE
+// CRIAR UM WIDGET PARA O ARRAY E UM PARA OS ELEMENTOS DO ARRAY
 val model = JsonObjectBuilder()
 fun main() {
     val frame = JFrame("Josue - JSON Object Editor").apply {
@@ -84,8 +85,29 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
         parentJPanel.add(newNestedPanel)
     }
     if(newValue == "[ ]"){
-        //TODO CREATE A NESTED PANEL FOR THE JSON ARRAY,
-        // IN VIEW ADD FUNCTIONALITY TO HAVE BUTTONS AND A PANEL FOR A JSONARRAY
-        println("IN")
+        val newNestedModel = JsonArrayBuilder()
+        val newNestedPanel = JsonArrayPanel(newNestedModel)
+        if(parentJPanel is JsonObjectPanel){
+            parentJPanel.model.data.put(key, newNestedModel.jsonData)
+            parentJPanel.nestedPanels.put(key, newNestedPanel)
+        }
+        // Add observers to the new panel
+        newNestedPanel.addObserver(object : JsonArrayEditorViewObserver {
+            override fun addValue(key: String) {
+                newNestedModel.addValue(key)
+                model.refreshModel()
+            }
+
+            override fun removeValue(key: String) {
+                newNestedModel.removeValue(key)
+                model.refreshModel()
+            }
+
+            override fun modifyValue(key: String, newValue: String, oldValue:String) {
+                newNestedModel.modifyValue(key, newValue, oldValue)
+                model.refreshModel()
+            }
+        })
+        parentJPanel.add(newNestedPanel)
     }
 }
