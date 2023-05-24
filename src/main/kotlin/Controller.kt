@@ -13,8 +13,16 @@ import javax.swing.JTextArea
 // MUST HAVE A STACK TO PROVIDE UNDO
 // ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAS SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT, either change the model or change call "properties?.values?.updateDepth(depth)"
 // IF ITS A createNestedPanel IF THE VALUE OF THE PROPERTY THAT CREATED IT CHANGED, THE VIEW IS NOT REMOVING THE PANEL DONE
-// CRIAR UM WIDGET PARA O ARRAY E UM PARA OS ELEMENTOS DO ARRAY
+// CRIAR UM WIDGET PARA O ARRAY E UM PARA OS ELEMENTOS DO ARRAY    DONE
+// -
+// MUDAR O JsonArrayProperty PARA TER UMA LÓGICA CORRETA, SEM CHAVE!!!      WORKING ON IT
+//      ISSUE WHEN ADDING A JSONOBJECT OR A JSONARRAY TO A NESTED JSON ARRAY, IT ADDS 2
+//      se o pai for um Array e adicionar um OBJ/ARR, estraga
+//      CHECK MODIFYVALUE IN ARRAY SINCE THATS WHERE THE ISSUE IS COMING FROM
+//      check they key, new value and oldv value of modified property since thats where the issue is
+
 val model = JsonObjectBuilder()
+
 fun main() {
     val frame = JFrame("Josue - JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
@@ -56,7 +64,6 @@ fun main() {
     frame.isVisible = true
 }
 fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
-    println("NEW VALUE RECEIVED${ newValue }")
     if (newValue == "{ }") {
         val newNestedModel = JsonObjectBuilder()
         val newNestedPanel = JsonObjectPanel(newNestedModel)
@@ -64,7 +71,12 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
         if(parentJPanel is JsonObjectPanel){
             parentJPanel.model.data.put(key, newNestedModel.jsonData)
             parentJPanel.nestedPanels.put(key, newNestedPanel)
-        }
+        }else{
+            if(parentJPanel is JsonArrayPanel){
+                parentJPanel.model.data.add(newNestedModel.jsonData)
+                parentJPanel.nestedPanels.put(key, newNestedPanel)
+            }
+    }
         // Add observers to the new panel
         newNestedPanel.addObserver(object : EditViewObserver {
             override fun addProperty(key: String) {
@@ -90,6 +102,11 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
         if(parentJPanel is JsonObjectPanel){
             parentJPanel.model.data.put(key, newNestedModel.jsonData)
             parentJPanel.nestedPanels.put(key, newNestedPanel)
+        }else{
+            if(parentJPanel is JsonArrayPanel){
+                parentJPanel.model.data.add(newNestedModel.jsonData)
+                parentJPanel.nestedPanels.put(key, newNestedPanel)
+            }
         }
         // Add observers to the new panel
         newNestedPanel.addObserver(object : JsonArrayEditorViewObserver {

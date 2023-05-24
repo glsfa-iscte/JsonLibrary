@@ -1,9 +1,10 @@
 import java.awt.Color
 import java.awt.Component
 import java.awt.Dimension
-import java.awt.FlowLayout
 import java.awt.event.*
 import javax.swing.*
+
+
 //TODO
 // CREATE A PANEL FOR EACH JSON OBJECT AND THEN FOR EACH ARRAY      DONE
 // USAR SO UMA INTERFACE PARA OS OBJETOS E PARA O ARRAY, NO MODEL E NA VIEW
@@ -160,12 +161,13 @@ interface EditViewObserver {
     }
 
 }
-//TODO CHANGE THIS CLASS SO THAT ITS WIDGETS ONLY HAVE A TEXT FIELD, THAT CAN THEN CREATE AN OBJECT, ARRAY OR JSONVALUE
+
 interface JsonArrayEditorViewObserver {
     fun addValue(key: String) { }
     fun removeValue(key: String){ }
     fun modifyValue(key: String, newValue: String, oldValue: String){ }
 }
+
 class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
     private val observers: MutableList<JsonArrayEditorViewObserver> = mutableListOf()
     val nestedPanels: MutableMap<String, JPanel> = mutableMapOf()
@@ -217,7 +219,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
     }
 
     fun propertyAdded(key: String) {
-        add(JsonArrayProperty(key, "N/A"))
+        add(JsonArrayProperty(key, key))
         revalidate()
         repaint()
     }
@@ -235,6 +237,8 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
         repaint()
     }
 
+    //TODO É ISTO QUE ESTÁ A CAUSAR OS PROBLEMAS WHEN ADDING A JSONOBJECT OR A JSONARRAY TO A NESTED JSON ARRAY, IT ADDS 2
+    // se o pai for um Array e adicionar um OBJ/ARR, estraga
     fun propertyModified(key: String, newValue: String, oldValue: String) {
         //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
         if (nestedPanels.containsKey(key)) {
@@ -261,15 +265,15 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
             alignmentY = Component.TOP_ALIGNMENT
             maximumSize = Dimension(150, 50)
 
-            label = JLabel(key)
+            label = JLabel("  ")
             add(label)
 
             textField = JTextField(value)
             textField.addFocusListener(object : FocusAdapter() {
+                //TODO 1 CLICO PARA MUDAR O VALOR E CHAMA O MODEL
                 override fun focusLost(e: FocusEvent) {
-
                     observers.forEach {
-                        it.modifyValue(label.text, textField.text, value)
+                        it.modifyValue(value, textField.text, value)
                     }
                 }
             })

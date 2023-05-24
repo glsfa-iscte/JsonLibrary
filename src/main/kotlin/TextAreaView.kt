@@ -6,17 +6,17 @@ class TextAreaView(private val model: JsonObjectBuilder): JTextArea(){
         model.addObserver(object: JsonObjectObserver{
             override fun addProperty(key: String) {
                 text = model.jsonData.toJsonString
-                println(model.data)
+                println("Added "+model.data)
             }
 
             override fun removeProperty(key: String) {
                 text = model.jsonData.toJsonString
-                println(model.data)
+                println("Removed "+model.data)
             }
 
             override fun modifyProperty(key: String, newValue: String, oldValue: String) {
                 text = model.jsonData.toJsonString
-                println(model.data)
+                println("Modified "+model.data)
             }
 
             override fun refreshModel() {

@@ -98,14 +98,12 @@ class JsonObjectBuilder() {
         }
     }
     fun modifyValue(key:String, newValue: String, oldValue: String) {
-        //println("RECEIVED : NEW ${newValue} OLD ${oldValue}")
         val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-
         //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
         if(oldValue != jsonValue.toJsonString) {
             data.put(key, jsonValue)
             observers.forEach {
-                it.modifyProperty(key, jsonValue.toJsonString, instanciateJson(parseToOriginalReturnType(newValue)).toJsonString)
+                it.modifyProperty(key, jsonValue.toJsonString, jsonValue.toJsonString)
             }
         }
     }
@@ -118,7 +116,7 @@ class JsonObjectBuilder() {
     fun parseToOriginalReturnType(input: String): Any? {
         return when {
             input == ":" -> mutableMapOf<Any, Any>()
-            input == "N/A" -> null
+            input == "N/A" || input == "null" -> null
             input.isNullOrBlank() -> mutableListOf<Any>()
             input.toIntOrNull() != null -> input.toInt()
             input.toDoubleOrNull() != null -> input.toDouble()
@@ -140,7 +138,6 @@ interface JsonArrayObserver {
     fun refreshModel(){ }
 }
 
-//TODO MUDAR O NOME DATA E JSONDATA JA QUE PODE CONFUNDIR COM O DO JSONOBJECTBUILDER
 class JsonArrayBuilder() {
     var data = mutableListOf<JsonValue>()
     var jsonData = JsonArray(data)
@@ -168,23 +165,22 @@ class JsonArrayBuilder() {
             it.removeValue(value)
         }
     }
+    //TODO ACHO QUE ISTO ESÁ A CAUSAR O PROBLEMA DE ADICIONAR UM OBJ/ARR A UM ARRAY
+    // 2 O MODEL RECEBE O VALUE, VALOR DO TEXT FIELD E O VALUE
     fun modifyValue(key:String, newValue: String, oldValue: String) {
-        //println("RECEIVED : NEW ${newValue} OLD ${oldValue}")
-    /*    val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-
-        //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
+        val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
         if(oldValue != jsonValue.toJsonString) {
-            data.put(key, jsonValue)
+            val index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
+            data.set(index, jsonValue)
             observers.forEach {
-                it.modifyProperty(key, jsonValue.toJsonString, instanciateJson(parseToOriginalReturnType(newValue)).toJsonString)
+                it.modifyValue(key, jsonValue.toJsonString, jsonValue.toJsonString)
             }
         }
-     */
     }
     fun parseToOriginalReturnType(input: String): Any? {
         return when {
             input == ":" -> mutableMapOf<Any, Any>()
-            input == "N/A" -> null
+            input == "N/A" || input == "null" -> null
             input.isNullOrBlank() -> mutableListOf<Any>()
             input.toIntOrNull() != null -> input.toInt()
             input.toDoubleOrNull() != null -> input.toDouble()
