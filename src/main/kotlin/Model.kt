@@ -99,7 +99,7 @@ class JsonObjectBuilder() {
     }
     fun modifyValue(key:String, newValue: String, oldValue: String) {
         val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-        println("MODEL OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
+        println("OBJECT MODEL OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
         //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
         if(oldValue != jsonValue.toJsonString) {
             data.put(key, jsonValue)
@@ -167,22 +167,54 @@ class JsonArrayBuilder() {
             it.removeValue(value)
         }
     }
-    //TODO ACHO QUE ISTO ESÁ A CAUSAR O PROBLEMA DE ADICIONAR UM OBJ/ARR A UM ARRAY
-    // 2 O MODEL RECEBE O VALUE, VALOR DO TEXT FIELD E O VALUE
-    //PROBLEMA, AO ELE INSTANCIAR O OLD VALUE ESTRAGA, JA QUE O OLD VALUE TEM ESPAÇOS
     fun modifyValue(key:String, newValue: String, oldValue: String) {
+        val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+        println("ARRAY MODEL JSONVALUE |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}| DATA ${data}")
+        if(oldValue != jsonValue.toJsonString) {
+            var index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
+            //TO PREVENT MODEL GUI FROM CRASHING, THIS VERIFICATION BELLOW WAS ADDED TO UPDATE THE INDEX IF THE ABOVE FAILS
+            data.forEach {
+                value ->
+                if(value.toJsonString == oldValue && index == -1) {
+                    //println("HIT INDEX: |${data.indexOf(value)}|")
+                    index = data.indexOf(value)
+                }
+            }
+            data[index] = jsonValue
+            observers.forEach {
+                it.modifyValue(key, jsonValue.toJsonString, jsonValue.toJsonString)
+            }
+        }
+        /*
+        fun modifyValue(key:String, newValue: String, oldValue: String) {
         val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
         println("MODEL JSONVALUE |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}| DATA ${data}")
         if(oldValue != jsonValue.toJsonString) {
-            println(oldValue.length)
-            println("PARSED: ${parseToOriginalReturnType(oldValue)}|")
-            println("INSTANCIATED: ${instanciateJson(parseToOriginalReturnType(oldValue))}")
-            val index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
+            println("OLD VALUE: ${oldValue}")
+            var index = -1
+            for(element in data){
+                if(element.toJsonString == oldValue){
+                    println("HIT: |${element}|")
+                    index = data.indexOf(element)
+
+                }
+
+            }
+
+            data.forEach {
+                value ->
+                if(value.toJsonString == oldValue)
+                    println("HIT")
+            }
+            //val index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
+
             data[index] = jsonValue
+
             observers.forEach {
                 it.modifyValue(key, jsonValue.toJsonString, newValue)
             }
         }
+    }*/
     }
     fun parseToOriginalReturnType(input: String): Any? {
         return when {

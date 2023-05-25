@@ -242,6 +242,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
 
     //TODO É ISTO QUE ESTÁ A CAUSAR OS PROBLEMAS WHEN ADDING A JSONOBJECT OR A JSONARRAY TO A NESTED JSON ARRAY, IT ADDS 2
     // se o pai for um Array e adicionar um OBJ/ARR, estraga
+
     fun propertyModified(key: String, newValue: String, oldValue: String) {
         //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
         //if (nestedPanels.containsKey(key)) {
@@ -254,6 +255,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
         val property = properties.find { it.getKey() == key }
         println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
         property?.setValue(newValue)
+        //TODO SE EU COMENTAR O CREATE NESTED PANEL, SE MUDAR O WIDGET PARA ARR/OBJ ELE CRIA UM JsonArray(valueList=null), ALGO ANTES CRIA O PROBLEMA!!!!!
         createNestedPanel(key, newValue, this)
         revalidate()
         repaint()

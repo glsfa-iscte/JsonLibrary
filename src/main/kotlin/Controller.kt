@@ -97,8 +97,11 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
         parentJPanel.add(newNestedPanel)
     }
     if(newValue == "[ ]"){
+        println("1 CREATED ARR")
         val newNestedModel = JsonArrayBuilder()
         val newNestedPanel = JsonArrayPanel(newNestedModel)
+
+
         if(parentJPanel is JsonObjectPanel){
             parentJPanel.model.data.put(key, newNestedModel.jsonData)
             parentJPanel.nestedPanels.put(key, newNestedPanel)
@@ -127,5 +130,6 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
             }
         })
         parentJPanel.add(newNestedPanel)
+
     }
 }
