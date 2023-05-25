@@ -111,6 +111,7 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
         // Add observers to the new panel
         newNestedPanel.addObserver(object : JsonArrayEditorViewObserver {
             override fun addValue(key: String) {
+                println("2 CONTROLLER")
                 newNestedModel.addValue(key)
                 model.refreshModel()
             }

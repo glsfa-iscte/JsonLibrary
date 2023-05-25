@@ -87,6 +87,7 @@ interface EditViewObserver {
                 nestedPanels.remove(key)
             }
             //ADDED TO UPDATE THE oldValue
+            println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
             val properties = components.filterIsInstance<JsonObjectProperty>()
             val property = properties.find { it.getKey() == key }
             property?.setValue(newValue)
@@ -171,8 +172,7 @@ interface JsonArrayEditorViewObserver {
 class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
     private val observers: MutableList<JsonArrayEditorViewObserver> = mutableListOf()
     val nestedPanels: MutableMap<String, JPanel> = mutableMapOf()
-
-    //fun getJsonObjectPanelModel() = model
+    var keys = 1
     fun addObserver(observer: JsonArrayEditorViewObserver) = observers.add(observer)
 
     init {
@@ -192,6 +192,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                     add.addActionListener {
                         val text = JOptionPane.showInputDialog("text")
                         observers.forEach {
+                            println("1 CLICK ADD VIEW")
                             it.addValue(text)
                         }
                         menu.isVisible = false
@@ -219,7 +220,9 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
     }
 
     fun propertyAdded(key: String) {
-        add(JsonArrayProperty(key, key))
+        println("4 UPDATE VIEW")
+        add(JsonArrayProperty(keys.toString(), key))
+        keys++
         revalidate()
         repaint()
     }
@@ -241,13 +244,15 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
     // se o pai for um Array e adicionar um OBJ/ARR, estraga
     fun propertyModified(key: String, newValue: String, oldValue: String) {
         //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
-        if (nestedPanels.containsKey(key)) {
-            remove(nestedPanels[key])
-            nestedPanels.remove(key)
-        }
+        //if (nestedPanels.containsKey(key)) {
+        //    remove(nestedPanels[key])
+        //    nestedPanels.remove(key)
+        //}
         //ADDED TO UPDATE THE oldValue
         val properties = components.filterIsInstance<JsonArrayProperty>()
+
         val property = properties.find { it.getKey() == key }
+        println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
         property?.setValue(newValue)
         createNestedPanel(key, newValue, this)
         revalidate()
@@ -256,7 +261,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
 
     inner class JsonArrayProperty(private val key: String, private var value: String) : JPanel() {
 
-        private val label: JLabel
         private val textField: JTextField
 
         init {
@@ -265,15 +269,13 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
             alignmentY = Component.TOP_ALIGNMENT
             maximumSize = Dimension(150, 50)
 
-            label = JLabel("  ")
-            add(label)
 
             textField = JTextField(value)
             textField.addFocusListener(object : FocusAdapter() {
-                //TODO 1 CLICO PARA MUDAR O VALOR E CHAMA O MODEL
                 override fun focusLost(e: FocusEvent) {
+
                     observers.forEach {
-                        it.modifyValue(value, textField.text, value)
+                        it.modifyValue(key, textField.text, value)
                     }
                 }
             })
@@ -308,10 +310,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
         fun setValue(newValue: String) {
             value = newValue
             //textField.text = value
-        }
-
-        fun getLabel(): JLabel {
-            return label
         }
 
         fun getTextField(): JTextField {

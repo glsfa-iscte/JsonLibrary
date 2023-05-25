@@ -99,6 +99,7 @@ class JsonObjectBuilder() {
     }
     fun modifyValue(key:String, newValue: String, oldValue: String) {
         val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+        println("MODEL OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
         //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
         if(oldValue != jsonValue.toJsonString) {
             data.put(key, jsonValue)
@@ -152,6 +153,7 @@ class JsonArrayBuilder() {
     }
 
     fun addValue(value: String) {
+        println("3 MODEL")
         val instanciatedInput = instanciateJson(parseToOriginalReturnType(value))
         data.add(instanciatedInput)
         observers.forEach {
@@ -167,13 +169,18 @@ class JsonArrayBuilder() {
     }
     //TODO ACHO QUE ISTO ESÁ A CAUSAR O PROBLEMA DE ADICIONAR UM OBJ/ARR A UM ARRAY
     // 2 O MODEL RECEBE O VALUE, VALOR DO TEXT FIELD E O VALUE
+    //PROBLEMA, AO ELE INSTANCIAR O OLD VALUE ESTRAGA, JA QUE O OLD VALUE TEM ESPAÇOS
     fun modifyValue(key:String, newValue: String, oldValue: String) {
         val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+        println("MODEL JSONVALUE |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}| DATA ${data}")
         if(oldValue != jsonValue.toJsonString) {
+            println(oldValue.length)
+            println("PARSED: ${parseToOriginalReturnType(oldValue)}|")
+            println("INSTANCIATED: ${instanciateJson(parseToOriginalReturnType(oldValue))}")
             val index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
-            data.set(index, jsonValue)
+            data[index] = jsonValue
             observers.forEach {
-                it.modifyValue(key, jsonValue.toJsonString, jsonValue.toJsonString)
+                it.modifyValue(key, jsonValue.toJsonString, newValue)
             }
         }
     }
