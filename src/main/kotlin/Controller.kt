@@ -12,14 +12,8 @@ import javax.swing.JTextArea
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY
 // MUST HAVE A STACK TO PROVIDE UNDO
 // ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAS SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT, either change the model or change call "properties?.values?.updateDepth(depth)"
-// IF ITS A createNestedPanel IF THE VALUE OF THE PROPERTY THAT CREATED IT CHANGED, THE VIEW IS NOT REMOVING THE PANEL DONE
-// CRIAR UM WIDGET PARA O ARRAY E UM PARA OS ELEMENTOS DO ARRAY    DONE
-// -
-// MUDAR O JsonArrayProperty PARA TER UMA LÓGICA CORRETA, SEM CHAVE!!!      WORKING ON IT
-//      ISSUE WHEN ADDING A JSONOBJECT OR A JSONARRAY TO A NESTED JSON ARRAY, IT ADDS 2
-//      se o pai for um Array e adicionar um OBJ/ARR, estraga
-//      CHECK MODIFYVALUE IN ARRAY SINCE THATS WHERE THE ISSUE IS COMING FROM
-//      check they key, new value and oldv value of modified property since thats where the issue is
+// ISSUES IN THE REMOVAL OF NESTED PANELS IN JSON ARRAY
+
 
 val model = JsonObjectBuilder()
 
@@ -64,7 +58,7 @@ fun main() {
     frame.isVisible = true
 }
 fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
-    if (newValue == "{ }") {
+    if (newValue == ":") {
         val newNestedModel = JsonObjectBuilder()
         val newNestedPanel = JsonObjectPanel(newNestedModel)
         //ISTO TRATA DE LIGAR O NESTED AO PAI
@@ -73,7 +67,9 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
             parentJPanel.nestedPanels.put(key, newNestedPanel)
         }else{
             if(parentJPanel is JsonArrayPanel){
-                parentJPanel.model.data.add(newNestedModel.jsonData)
+                //parentJPanel.model.data.add(newNestedModel.jsonData)
+                val index = parentJPanel.model.data.indexOf(instanciateJson(parseToOriginalReturnType(newValue)))
+                parentJPanel.model.data[index] = newNestedModel.jsonData
                 parentJPanel.nestedPanels.put(key, newNestedPanel)
             }
     }
@@ -96,7 +92,7 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
         })
         parentJPanel.add(newNestedPanel)
     }
-    if(newValue == "[ ]"){
+    if(newValue == ""){
         println("1 CREATED ARR")
         val newNestedModel = JsonArrayBuilder()
         val newNestedPanel = JsonArrayPanel(newNestedModel)
@@ -107,7 +103,10 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
             parentJPanel.nestedPanels.put(key, newNestedPanel)
         }else{
             if(parentJPanel is JsonArrayPanel){
-                parentJPanel.model.data.add(newNestedModel.jsonData)
+                //ELE DUPLICAVA JA QUE O MODEL IRIA CRIAR UM ARR/OBJ VAZIU E O ADD AQUI ADICIONAVA UM NOVOO ARR/OBJ ASSOCIADO AO PAINEL, EM VEZ DE SUBSTITUIR O ARR QUE O MODELO ADICIONOU
+                val index = parentJPanel.model.data.indexOf(instanciateJson(parseToOriginalReturnType(newValue)))
+                parentJPanel.model.data[index] = newNestedModel.jsonData
+                //parentJPanel.model.data.add(newNestedModel.jsonData)
                 parentJPanel.nestedPanels.put(key, newNestedPanel)
             }
         }
@@ -133,3 +132,5 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
 
     }
 }
+
+

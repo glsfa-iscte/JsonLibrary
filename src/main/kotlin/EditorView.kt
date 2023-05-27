@@ -218,20 +218,24 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
         })
 
     }
-
+    //TODO ALTERAR ISTO E OUTRAS (JSON ARRAY OBSERVER) QUE RECEBEM "KEY" JA QUE DEVERIA SER VALUE
     fun propertyAdded(key: String) {
         println("4 UPDATE VIEW")
+        println("ARR PROPERTY ADDED: |${keys.toString()}| |${key}|")
         add(JsonArrayProperty(keys.toString(), key))
         keys++
         revalidate()
         repaint()
     }
 
-    fun propertyRemoved(key: String) {
-        val find = components.find { it is JsonArrayProperty && it.getKey() == key }
-        find?.let {
-            remove(find)
-        }
+
+    fun propertyRemoved(value: String) {
+        println("VIEW REMOVING VALUE |${value}|")
+        //val find = components.find { it is JsonArrayProperty && it.getKey() == key }
+        val find = components.find { it is JsonArrayProperty && it.getValue()==value }
+        val key = (find as JsonArrayProperty).getKey()
+        println("ASSOCIATED KEY |${key}|")
+        remove(find)
         if (nestedPanels.containsKey(key)) {
             remove(nestedPanels[key])
             nestedPanels.remove(key)
@@ -240,22 +244,18 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
         repaint()
     }
 
-    //TODO É ISTO QUE ESTÁ A CAUSAR OS PROBLEMAS WHEN ADDING A JSONOBJECT OR A JSONARRAY TO A NESTED JSON ARRAY, IT ADDS 2
-    // se o pai for um Array e adicionar um OBJ/ARR, estraga
-
     fun propertyModified(key: String, newValue: String, oldValue: String) {
         //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
-        //if (nestedPanels.containsKey(key)) {
-        //    remove(nestedPanels[key])
-        //    nestedPanels.remove(key)
-        //}
+        if (nestedPanels.containsKey(key)) {
+            remove(nestedPanels[key])
+            nestedPanels.remove(key)
+        }
         //ADDED TO UPDATE THE oldValue
         val properties = components.filterIsInstance<JsonArrayProperty>()
 
         val property = properties.find { it.getKey() == key }
         println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
         property?.setValue(newValue)
-        //TODO SE EU COMENTAR O CREATE NESTED PANEL, SE MUDAR O WIDGET PARA ARR/OBJ ELE CRIA UM JsonArray(valueList=null), ALGO ANTES CRIA O PROBLEMA!!!!!
         createNestedPanel(key, newValue, this)
         revalidate()
         repaint()
@@ -266,6 +266,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
         private val textField: JTextField
 
         init {
+            //println("CREATING ARR PROPERTY: |${key}| |${value}|")
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             alignmentX = Component.LEFT_ALIGNMENT
             alignmentY = Component.TOP_ALIGNMENT
@@ -275,14 +276,14 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
             textField = JTextField(value)
             textField.addFocusListener(object : FocusAdapter() {
                 override fun focusLost(e: FocusEvent) {
-
                     observers.forEach {
+                        println("MODIFYING TO: |${key}| |${textField.text}| |${value}|")
                         it.modifyValue(key, textField.text, value)
                     }
                 }
             })
-            add(textField)
-            addMouseListener(object : MouseAdapter() {
+            //MOCED REMOVE FUNCTION TO TEXTFIELD
+            textField.addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
 
                     if (SwingUtilities.isRightMouseButton(e)) {
@@ -290,7 +291,12 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                         val deleteSelected = JButton("delete")
                         deleteSelected.addActionListener {
                             observers.forEach {
-                                it.removeValue(key)
+                                println("CLICKED TO REMOVE KEY: ${key} VALUE: |${value}|")
+                                //TODO ele vai ter que mandar mais alguma coisa de forma a informar qual é o painel associado
+                                println("HAS ASSOCIATED PANEL |${nestedPanels.containsKey(key)}| |${(nestedPanels[key] as JsonArrayPanel).model.jsonData}|")
+                                //TODO MUDAR O REMOVE VALUE DE FORMA A MANDAR nestedPanels[key], PARA O MODELO RECEBER E APAGAR ESSE PAINEL
+                                // ELE TERÁ QUE DEPOIS VAI TER QUE IR BUSCAR O JSONDATA, CONFORME ESTA EM CIMA E IR APAGAR O QUE É IGUAL
+                                it.removeValue(value)
                             }
                         }
                         //menu.add(add)
@@ -299,6 +305,8 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                     }
                 }
             })
+            add(textField)
+
         }
 
         fun getKey(): String {

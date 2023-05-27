@@ -65,6 +65,17 @@ data class JsonNull(val value: Any? = null) : JsonValue {
         get() = " null "
 }
 
+fun parseToOriginalReturnType(input: String): Any? {
+    return when {
+        input == ":" -> mapOf<Any, Any>()
+        input == "N/A" || input == "null" -> null
+        input.isNullOrBlank() -> listOf<Any>()
+        input.toIntOrNull() != null -> input.toInt()
+        input.toDoubleOrNull() != null -> input.toDouble()
+        input.toBooleanStrictOrNull() != null -> input.toBoolean()
+        else -> input
+    }
+}
 interface JsonObjectObserver {
     fun addProperty(key: String) { }
     fun removeProperty(key: String){ }
@@ -98,13 +109,17 @@ class JsonObjectBuilder() {
         }
     }
     fun modifyValue(key:String, newValue: String, oldValue: String) {
-        val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-        println("OBJECT MODEL OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
         //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
-        if(oldValue != jsonValue.toJsonString) {
+        //ALTERADO PARA VERIFICAR SE O CAMPO FOI ALTERADO CORRETAMENTE
+        //if(oldValue != jsonValue.toJsonString) {
+        if(oldValue != newValue) {
+            val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+            println("OBJECT MODEL |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
             data.put(key, jsonValue)
             observers.forEach {
-                it.modifyProperty(key, jsonValue.toJsonString, jsonValue.toJsonString)
+                //ALTERED SO THAT IT AVOIDS SETTING THE NEW OBJECT WITH UNNECESSARY SPACES
+                // it.modifyProperty(key, jsonValue.toJsonString, jsonValue.toJsonString)
+                it.modifyProperty(key, newValue, newValue)
             }
         }
     }
@@ -112,17 +127,6 @@ class JsonObjectBuilder() {
     fun refreshModel(){
         observers.forEach {
             it.refreshModel()
-        }
-    }
-    fun parseToOriginalReturnType(input: String): Any? {
-        return when {
-            input == ":" -> mutableMapOf<Any, Any>()
-            input == "N/A" || input == "null" -> null
-            input.isNullOrBlank() -> mutableListOf<Any>()
-            input.toIntOrNull() != null -> input.toInt()
-            input.toDoubleOrNull() != null -> input.toDouble()
-            input.toBooleanStrictOrNull() != null -> input.toBoolean()
-            else -> input
         }
     }
     fun compareStrings(string1: String, string2: String): Boolean {
@@ -139,6 +143,8 @@ interface JsonArrayObserver {
     fun refreshModel(){ }
 }
 
+//TODO PONDERAR MUDAR O MODELO PARA SER UM MAPA, DE FORMA A SABER QUAL DAS COISAS APAGAR EXATAMENTE
+//TODO VERIFICAR O QUE ESTÁ E O QUE NÃO ESTÁ A FUCNIONAR (Remove num array não funciona (modelo so tem o value e eu estou a passar lhe a chave))
 class JsonArrayBuilder() {
     var data = mutableListOf<JsonValue>()
     var jsonData = JsonArray(data)
@@ -162,59 +168,26 @@ class JsonArrayBuilder() {
     }
     fun removeValue(value: String) {
         val instanciatedInput = instanciateJson(parseToOriginalReturnType(value))
+        println("MODEL RECEIVED |${value}| REMOVING |${instanciatedInput}|")
         data.remove(instanciatedInput)
         observers.forEach {
             it.removeValue(value)
         }
     }
+    //TODO O PROBLEMA DE ADICIONAR DUPLICADO UM OBJ OU UM ARR É PORQUE, ELE AQUI ADICIONA UM ARR/OBJ E DEPOIS, QUANDO VAI AO createNestedPanel, ele cria instancia a classe e volta a adicionar
+    //no objeto funciona porque ele usa o "put", o que vai substituir a ocorrencia , ao fazer add, dá porcaria
     fun modifyValue(key:String, newValue: String, oldValue: String) {
-        val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-        println("ARRAY MODEL JSONVALUE |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}| DATA ${data}")
-        if(oldValue != jsonValue.toJsonString) {
-            var index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
-            //TO PREVENT MODEL GUI FROM CRASHING, THIS VERIFICATION BELLOW WAS ADDED TO UPDATE THE INDEX IF THE ABOVE FAILS
-            data.forEach {
-                value ->
-                if(value.toJsonString == oldValue && index == -1) {
-                    //println("HIT INDEX: |${data.indexOf(value)}|")
-                    index = data.indexOf(value)
-                }
-            }
+
+        if(oldValue != newValue) {
+            val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+            println("ARRAY MODEL JSONVALUE |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}| DATA ${data}")
+            val index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
+            //println("INDEX: |${index}|")
             data[index] = jsonValue
             observers.forEach {
-                it.modifyValue(key, jsonValue.toJsonString, jsonValue.toJsonString)
+                it.modifyValue(key, newValue, newValue)
             }
         }
-        /*
-        fun modifyValue(key:String, newValue: String, oldValue: String) {
-        val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-        println("MODEL JSONVALUE |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}| DATA ${data}")
-        if(oldValue != jsonValue.toJsonString) {
-            println("OLD VALUE: ${oldValue}")
-            var index = -1
-            for(element in data){
-                if(element.toJsonString == oldValue){
-                    println("HIT: |${element}|")
-                    index = data.indexOf(element)
-
-                }
-
-            }
-
-            data.forEach {
-                value ->
-                if(value.toJsonString == oldValue)
-                    println("HIT")
-            }
-            //val index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
-
-            data[index] = jsonValue
-
-            observers.forEach {
-                it.modifyValue(key, jsonValue.toJsonString, newValue)
-            }
-        }
-    }*/
     }
     fun parseToOriginalReturnType(input: String): Any? {
         return when {
