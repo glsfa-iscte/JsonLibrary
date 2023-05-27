@@ -6,7 +6,6 @@ import javax.swing.*
 
 
 //TODO
-// CREATE A PANEL FOR EACH JSON OBJECT AND THEN FOR EACH ARRAY      DONE
 // USAR SO UMA INTERFACE PARA OS OBJETOS E PARA O ARRAY, NO MODEL E NA VIEW
 interface EditViewObserver {
     fun addProperty(key: String) { }
@@ -293,7 +292,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                             observers.forEach {
                                 println("CLICKED TO REMOVE KEY: ${key} VALUE: |${value}|")
                                 //TODO ele vai ter que mandar mais alguma coisa de forma a informar qual é o painel associado
-                                println("HAS ASSOCIATED PANEL |${nestedPanels.containsKey(key)}| |${(nestedPanels[key] as JsonArrayPanel).model.jsonData}|")
+                                println("HAS ASSOCIATED PANEL |${nestedPanels.containsKey(key)}| ")//|${(nestedPanels[key] as JsonArrayPanel).model.jsonData}|")
                                 //TODO MUDAR O REMOVE VALUE DE FORMA A MANDAR nestedPanels[key], PARA O MODELO RECEBER E APAGAR ESSE PAINEL
                                 // ELE TERÁ QUE DEPOIS VAI TER QUE IR BUSCAR O JSONDATA, CONFORME ESTA EM CIMA E IR APAGAR O QUE É IGUAL
                                 it.removeValue(value)

@@ -142,8 +142,6 @@ interface JsonArrayObserver {
     fun modifyValue(key: String, newValue: String, oldValue: String){ }
     fun refreshModel(){ }
 }
-
-//TODO PONDERAR MUDAR O MODELO PARA SER UM MAPA, DE FORMA A SABER QUAL DAS COISAS APAGAR EXATAMENTE
 //TODO VERIFICAR O QUE ESTÁ E O QUE NÃO ESTÁ A FUCNIONAR (Remove num array não funciona (modelo so tem o value e eu estou a passar lhe a chave))
 class JsonArrayBuilder() {
     var data = mutableListOf<JsonValue>()
@@ -174,8 +172,6 @@ class JsonArrayBuilder() {
             it.removeValue(value)
         }
     }
-    //TODO O PROBLEMA DE ADICIONAR DUPLICADO UM OBJ OU UM ARR É PORQUE, ELE AQUI ADICIONA UM ARR/OBJ E DEPOIS, QUANDO VAI AO createNestedPanel, ele cria instancia a classe e volta a adicionar
-    //no objeto funciona porque ele usa o "put", o que vai substituir a ocorrencia , ao fazer add, dá porcaria
     fun modifyValue(key:String, newValue: String, oldValue: String) {
 
         if(oldValue != newValue) {
@@ -187,17 +183,6 @@ class JsonArrayBuilder() {
             observers.forEach {
                 it.modifyValue(key, newValue, newValue)
             }
-        }
-    }
-    fun parseToOriginalReturnType(input: String): Any? {
-        return when {
-            input == ":" -> mutableMapOf<Any, Any>()
-            input == "N/A" || input == "null" -> null
-            input.isNullOrBlank() -> mutableListOf<Any>()
-            input.toIntOrNull() != null -> input.toInt()
-            input.toDoubleOrNull() != null -> input.toDouble()
-            input.toBooleanStrictOrNull() != null -> input.toBoolean()
-            else -> input
         }
     }
 }
@@ -259,11 +244,18 @@ data class JsonArray(val valueList: List<JsonValue>? = null) : JsonStructure {
      */
     override val toJsonString: String
         get() {
-            return valueList?.joinToString(
+            //ELVIS OPERATOR WAS REMOVED IN FAVOUR OF THE CHECK, SO THAT IF PROPERIES IS NULL OR EMPTY, IT RETURNS "{}" WHERE AS BEFORE IT ONLY RETURNED THAT IF PROPERTIES WAS NULL
+            //TEST SUITE PASSED
+            return if (valueList.isNullOrEmpty()) {
+                "[ ]"
+            } else {
+                valueList.joinToString(
                 separator = ",\n",
                 prefix = "[\n",
                 postfix = "\n${"\t".repeat(depth-1)}]",
-            ) { "${"\t".repeat(depth)}${it.toJsonString}" } ?: "[ ]"
+            ) { "${"\t".repeat(depth)}${it.toJsonString}"
+                }
+            }
         }
     override fun accept(visitor: Visitor) {
         visitor.visit(this)
