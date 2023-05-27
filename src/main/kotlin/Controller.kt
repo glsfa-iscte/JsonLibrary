@@ -3,7 +3,6 @@ import java.awt.GridLayout
 import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.JScrollPane
-import javax.swing.JTextArea
 
 //TODO
 // EDITOR MUST SHOW CONTENTS OF A JSON                              DONE
