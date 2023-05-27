@@ -117,8 +117,17 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
                 model.refreshModel()
             }
 
-            override fun removeValue(key: String) {
-                newNestedModel.removeValue(key)
+            override fun removeValue(key: String, value: String) {
+                if(newNestedPanel.nestedPanels.containsKey((key))){
+                    if(newNestedPanel.nestedPanels[key] is JsonArrayPanel)
+                        newNestedModel.removeValue(key, (newNestedPanel.nestedPanels[key] as JsonArrayPanel).getAssociatedModel().jsonData.toString())
+                    else
+                        newNestedModel.removeValue(key,(newNestedPanel.nestedPanels[key] as JsonObjectPanel).getAssociatedModel().jsonData.toString()
+                        )
+                }else {
+                    newNestedModel.removeValue(key, value)
+                }
+                //newNestedModel.removeValue(key)
                 model.refreshModel()
             }
 

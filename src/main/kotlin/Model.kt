@@ -138,7 +138,7 @@ class JsonObjectBuilder() {
 
 interface JsonArrayObserver {
     fun addValue(value: String) { }
-    fun removeValue(value: String){ }
+    fun removeValue(key: String, value: String){ }
     fun modifyValue(key: String, newValue: String, oldValue: String){ }
     fun refreshModel(){ }
 }
@@ -164,12 +164,23 @@ class JsonArrayBuilder() {
             it.addValue(value)
         }
     }
-    fun removeValue(value: String) {
-        val instanciatedInput = instanciateJson(parseToOriginalReturnType(value))
-        println("MODEL RECEIVED |${value}| REMOVING |${instanciatedInput}|")
-        data.remove(instanciatedInput)
+    fun removeValue(key:String, value: String) {
+        if(value.split("(")[0].trim().contains("JsonArray") || value.split("(")[0].trim().contains("JsonObject")){
+            println("DATA: "+data+" VALUE ARR/OBJ: "+value)
+            for (i in data) {
+                if(i.toString() == value) {
+                    data.remove(i)
+                    break
+                }
+            }
+        }else {
+            val instanciatedInput = instanciateJson(parseToOriginalReturnType(value))
+            println("MODEL RECEIVED |${value}| REMOVING |${instanciatedInput}|")
+            data.remove(instanciatedInput)
+        }
+        println("MODEL REMOVED: ${data}")
         observers.forEach {
-            it.removeValue(value)
+            it.removeValue(key, value)
         }
     }
     fun modifyValue(key:String, newValue: String, oldValue: String) {
