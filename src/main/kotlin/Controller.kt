@@ -59,7 +59,7 @@ fun main() {
 //TODO se ele criar um painel, o que eu tenho que fazer é, o parentJPanel vai ter que escutar se o modelo do JsonArray filho mudou, se mudar ele tem que chamar o JsonData, de forma a ser recalculado
 // Tera que ser tambem adicionado ao JsonArrayPanel
 // na parte que sao adicionados os observadores vai adicionar
-fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
+fun createNestedPanel(panelKey: String, newValue: String, parentJPanel: JPanel) {
     //DEBUG
     if(parentJPanel is JsonObjectPanel){
         println("OBJ PARENT DATA: |${parentJPanel.model.data}|")
@@ -72,12 +72,12 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
         val newNestedPanel = JsonObjectPanel(newNestedModel)
         //ISTO TRATA DE LIGAR O NESTED AO PAI
         if(parentJPanel is JsonObjectPanel){
-            parentJPanel.model.data.put(key, newNestedModel.jsonData)
-            parentJPanel.nestedPanels.put(key, newNestedPanel)
+            parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
+            parentJPanel.nestedPanels.put(panelKey, newNestedPanel)
         }else{
             if(parentJPanel is JsonArrayPanel){
-                parentJPanel.model.data.put(key, newNestedModel.jsonData)
-                parentJPanel.nestedPanels.put(key, newNestedPanel)
+                parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
+                parentJPanel.nestedPanels.put(panelKey, newNestedPanel)
             }
     }
         // Add observers to the new panel
@@ -106,12 +106,12 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
 
 
         if(parentJPanel is JsonObjectPanel){
-            parentJPanel.model.data.put(key, newNestedModel.jsonData)
-            parentJPanel.nestedPanels.put(key, newNestedPanel)
+            parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
+            parentJPanel.nestedPanels.put(panelKey, newNestedPanel)
         }else{
             if(parentJPanel is JsonArrayPanel){
-                parentJPanel.model.data.put(key, newNestedModel.jsonData)
-                parentJPanel.nestedPanels.put(key, newNestedPanel)
+                parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
+                parentJPanel.nestedPanels.put(panelKey, newNestedPanel)
             }
         }
         //MUST CHECK LISTENERS TO UPDATE
@@ -123,16 +123,34 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
             override fun addValue(key: String) {
                 println("2 CONTROLLER")
                 newNestedModel.addValue(key)
+                if(parentJPanel is JsonObjectPanel)
+                    parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
+                else
+                    if(parentJPanel is JsonArrayPanel)
+                        parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
                 model.refreshModel()
             }
 
             override fun removeValue(key: String) {
                 newNestedModel.removeValue(key)
+                if(parentJPanel is JsonObjectPanel)
+                    parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
+                else
+                    if(parentJPanel is JsonArrayPanel)
+                        parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
                 model.refreshModel()
             }
 
             override fun modifyValue(key: String, newValue: String, oldValue:String) {
                 newNestedModel.modifyValue(key, newValue, oldValue)
+                if(parentJPanel is JsonObjectPanel)
+                    parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
+                else
+                    if(parentJPanel is JsonArrayPanel) {
+                        parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
+                        println("CONTROLLER ARR MOD |${parentJPanel.model.data}| |${newNestedModel.jsonData}|")
+                        println("IT WASNT MODIFIED DUE TO CALCULATED PROPERTY MODEL DATA: |${model.jsonData}|")
+                    }
                 model.refreshModel()
             }
         })
