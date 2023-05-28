@@ -11,7 +11,7 @@ import javax.swing.JScrollPane
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY
 // MUST HAVE A STACK TO PROVIDE UNDO
 // ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAS SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT, either change the model or change call "properties?.values?.updateDepth(depth)"
-// ISSUES IN THE REMOVAL OF NESTED PANELS IN JSON ARRAY
+// NESTED ARRAY CANT PROPAGATE CHANGES TO PARENT, IT ONLY HAS THE INITIAL REFERENCE TO IT, SO THE ARR REMAINS EMPTY
 
 
 val model = JsonObjectBuilder()
@@ -56,7 +56,17 @@ fun main() {
     }
     frame.isVisible = true
 }
+//TODO se ele criar um painel, o que eu tenho que fazer é, o parentJPanel vai ter que escutar se o modelo do JsonArray filho mudou, se mudar ele tem que chamar o JsonData, de forma a ser recalculado
+// Tera que ser tambem adicionado ao JsonArrayPanel
+// na parte que sao adicionados os observadores vai adicionar
 fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
+    //DEBUG
+    if(parentJPanel is JsonObjectPanel){
+        println("OBJ PARENT DATA: |${parentJPanel.model.data}|")
+    }
+    if(parentJPanel is JsonArrayPanel){
+        println("ARR PARENT DATA: |${parentJPanel.model.data}|")
+    }
     if (newValue == ":") {
         val newNestedModel = JsonObjectBuilder()
         val newNestedPanel = JsonObjectPanel(newNestedModel)
@@ -66,9 +76,7 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
             parentJPanel.nestedPanels.put(key, newNestedPanel)
         }else{
             if(parentJPanel is JsonArrayPanel){
-                //parentJPanel.model.data.add(newNestedModel.jsonData)
-                val index = parentJPanel.model.data.indexOf(instanciateJson(parseToOriginalReturnType(newValue)))
-                parentJPanel.model.data[index] = newNestedModel.jsonData
+                parentJPanel.model.data.put(key, newNestedModel.jsonData)
                 parentJPanel.nestedPanels.put(key, newNestedPanel)
             }
     }
@@ -102,13 +110,14 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
             parentJPanel.nestedPanels.put(key, newNestedPanel)
         }else{
             if(parentJPanel is JsonArrayPanel){
-                //ELE DUPLICAVA JA QUE O MODEL IRIA CRIAR UM ARR/OBJ VAZIU E O ADD AQUI ADICIONAVA UM NOVOO ARR/OBJ ASSOCIADO AO PAINEL, EM VEZ DE SUBSTITUIR O ARR QUE O MODELO ADICIONOU
-                val index = parentJPanel.model.data.indexOf(instanciateJson(parseToOriginalReturnType(newValue)))
-                parentJPanel.model.data[index] = newNestedModel.jsonData
-                //parentJPanel.model.data.add(newNestedModel.jsonData)
+                parentJPanel.model.data.put(key, newNestedModel.jsonData)
                 parentJPanel.nestedPanels.put(key, newNestedPanel)
             }
         }
+        //MUST CHECK LISTENERS TO UPDATE
+        // newNestedModel.addParentObserver(object: JsonModelListener{
+
+        //})
         // Add observers to the new panel
         newNestedPanel.addObserver(object : JsonArrayEditorViewObserver {
             override fun addValue(key: String) {
@@ -117,17 +126,8 @@ fun createNestedPanel(key: String, newValue: String, parentJPanel: JPanel) {
                 model.refreshModel()
             }
 
-            override fun removeValue(key: String, value: String) {
-                if(newNestedPanel.nestedPanels.containsKey((key))){
-                    if(newNestedPanel.nestedPanels[key] is JsonArrayPanel)
-                        newNestedModel.removeValue(key, (newNestedPanel.nestedPanels[key] as JsonArrayPanel).getAssociatedModel().jsonData.toString())
-                    else
-                        newNestedModel.removeValue(key,(newNestedPanel.nestedPanels[key] as JsonObjectPanel).getAssociatedModel().jsonData.toString()
-                        )
-                }else {
-                    newNestedModel.removeValue(key, value)
-                }
-                //newNestedModel.removeValue(key)
+            override fun removeValue(key: String) {
+                newNestedModel.removeValue(key)
                 model.refreshModel()
             }
 

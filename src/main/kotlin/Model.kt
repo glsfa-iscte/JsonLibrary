@@ -136,62 +136,69 @@ class JsonObjectBuilder() {
     }
 }
 
+//Kinterface JsonModelListener {
+//    fun onModelChanged() { }
+//}
 interface JsonArrayObserver {
     fun addValue(value: String) { }
-    fun removeValue(key: String, value: String){ }
+    fun removeValue(key: String){ }
     fun modifyValue(key: String, newValue: String, oldValue: String){ }
-    fun refreshModel(){ }
 }
-//TODO VERIFICAR O QUE ESTÁ E O QUE NÃO ESTÁ A FUCNIONAR (Remove num array não funciona (modelo so tem o value e eu estou a passar lhe a chave))
 class JsonArrayBuilder() {
-    var data = mutableListOf<JsonValue>()
-    var jsonData = JsonArray(data)
-    private val observers = mutableListOf<JsonArrayObserver>()
+    var data = mutableMapOf<String, JsonValue>()
+    //CHANGED SO THAT I DONT HAVE TO MANUALLY UPDATE IT
+    //var jsonData = JsonArray(data.values.toList())
+    val jsonData: JsonArray
+        get() = JsonArray(data.values.toList())
 
+    private val observers = mutableListOf<JsonArrayObserver>()
+    //K private val parentObserver = mutableListOf<JsonModelListener>()
+
+    //K fun addParentObserver(observer: JsonModelListener) {
+    //    parentObserver.add(observer)
+    //}
+    //Kprivate fun notifyParent() {
+     //   parentObserver.forEach {
+     //       it.onModelChanged()
+     //   }
+    //}
     fun addObserver(observer: JsonArrayObserver) {
         observers.add(observer)
     }
+
 
     fun removeObserver(observer: JsonArrayObserver) {
         observers.remove(observer)
     }
 
-    fun addValue(value: String) {
+    fun addValue(key: String) {
         println("3 MODEL")
-        val instanciatedInput = instanciateJson(parseToOriginalReturnType(value))
-        data.add(instanciatedInput)
+        data.put(key, JsonNull())
+        //jsonData = JsonArray(data.values.toList())
+        println("DATA HAS: |${data.values}| JSONARR: |${jsonData}|")
+        //K notifyParent()
         observers.forEach {
-            it.addValue(value)
+            it.addValue(key)
         }
     }
-    fun removeValue(key:String, value: String) {
-        if(value.split("(")[0].trim().contains("JsonArray") || value.split("(")[0].trim().contains("JsonObject")){
-            println("DATA: "+data+" VALUE ARR/OBJ: "+value)
-            for (i in data) {
-                if(i.toString() == value) {
-                    data.remove(i)
-                    break
-                }
-            }
-        }else {
-            val instanciatedInput = instanciateJson(parseToOriginalReturnType(value))
-            println("MODEL RECEIVED |${value}| REMOVING |${instanciatedInput}|")
-            data.remove(instanciatedInput)
-        }
-        println("MODEL REMOVED: ${data}")
+    fun removeValue(key:String) {
+        data.remove(key)
+        //jsonData = JsonArray(data.values.toList())
+        //K notifyParent()
         observers.forEach {
-            it.removeValue(key, value)
+            it.removeValue(key)
         }
     }
     fun modifyValue(key:String, newValue: String, oldValue: String) {
-
         if(oldValue != newValue) {
             val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-            println("ARRAY MODEL JSONVALUE |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}| DATA ${data}")
-            val index = data.indexOf(instanciateJson(parseToOriginalReturnType(oldValue)))
-            //println("INDEX: |${index}|")
-            data[index] = jsonValue
+            println("ARRAY MODEL |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
+            data.put(key, jsonValue)
+            //jsonData = JsonArray(data.values.toList())
+            //K notifyParent()
             observers.forEach {
+                //ALTERED SO THAT IT AVOIDS SETTING THE NEW OBJECT WITH UNNECESSARY SPACES
+                // it.modifyProperty(key, jsonValue.toJsonString, jsonValue.toJsonString)
                 it.modifyValue(key, newValue, newValue)
             }
         }

@@ -92,6 +92,8 @@ interface EditViewObserver {
             val property = properties.find { it.getKey() == key }
             property?.setValue(newValue)
             createNestedPanel(key, newValue, this)
+            //TODO se ele criar um painel, o numero de nested panels vai mudar, o que eu tenho que fazer é, este vai ter que escutar se o modelo do JsonArray mudou, se mudar ele tem que chamar o JsonData, de forma a ser recalculado
+            // Tera que ser tambem adicionado ao JsonArrayPanel
             revalidate()
             repaint()
         }
@@ -165,7 +167,7 @@ interface EditViewObserver {
 
 interface JsonArrayEditorViewObserver {
     fun addValue(key: String) { }
-    fun removeValue(key: String, value: String){ }
+    fun removeValue(key: String){ }
     fun modifyValue(key: String, newValue: String, oldValue: String){ }
 }
 
@@ -191,10 +193,10 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                     val menu = JPopupMenu("Message")
                     val add = JButton("add")
                     add.addActionListener {
-                        val text = JOptionPane.showInputDialog("text")
+                        //val text = JOptionPane.showInputDialog("text")
                         observers.forEach {
                             println("1 CLICK ADD VIEW")
-                            it.addValue(text)
+                            it.addValue(keys.toString())
                         }
                         menu.isVisible = false
                     }
@@ -209,8 +211,8 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                 propertyAdded(key)
             }
 
-            override fun removeValue(key: String, value: String) {
-                propertyRemoved(key, value)
+            override fun removeValue(key: String) {
+                propertyRemoved(key)
             }
 
             override fun modifyValue(key: String, newValue: String, oldValue: String) {
@@ -222,20 +224,20 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
     //TODO ALTERAR ISTO E OUTRAS (JSON ARRAY OBSERVER) QUE RECEBEM "KEY" JA QUE DEVERIA SER VALUE
     fun propertyAdded(key: String) {
         println("4 UPDATE VIEW")
-        println("ARR PROPERTY ADDED: |${keys.toString()}| |${key}|")
-        add(JsonArrayProperty(keys.toString(), key))
+        println("ARR PROPERTY ADDED: |${keys.toString()}|")
+        add(JsonArrayProperty(keys.toString(), "N/A"))
         keys++
         revalidate()
         repaint()
     }
 
 
-    fun propertyRemoved(key:String, value: String) {
-        val find = components.find { it is JsonArrayProperty && it.getKey() == key }
+    fun propertyRemoved(key:String) {
+        val find = components.find { it is JsonArrayProperty && it.getKey() == key}
         find?.let {
             remove(find)
         }
-        if (nestedPanels.containsKey(key)) {
+        if(nestedPanels.containsKey(key)){
             remove(nestedPanels[key])
             nestedPanels.remove(key)
         }
@@ -294,7 +296,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                                 //TODO ele vai ter que mandar mais alguma coisa de forma a informar qual é o painel associado
                                 //TODO MUDAR O REMOVE VALUE DE FORMA A MANDAR nestedPanels[key], PARA O MODELO RECEBER E APAGAR ESSE PAINEL
                                 // ELE TERÁ QUE DEPOIS VAI TER QUE IR BUSCAR O JSONDATA, CONFORME ESTA EM CIMA E IR APAGAR O QUE É IGUAL
-                                it.removeValue(key, value)
+                                it.removeValue(key)
                             }
                         }
                         //menu.add(add)
