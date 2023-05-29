@@ -16,8 +16,6 @@ interface EditViewObserver {
         private val observers: MutableList<EditViewObserver> = mutableListOf()
         // CHANGED TO JPANEL TO ALLOW NESTED OBJECT AND ARRAY val nestedPanels: MutableMap<String, JsonObjectPanel> = mutableMapOf()
         val nestedPanels: MutableMap<String, JPanel> = mutableMapOf()
-        fun getAssociatedModel()= model
-        //fun getJsonObjectPanelModel() = model
         fun addObserver(observer: EditViewObserver) = observers.add(observer)
         init {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -41,7 +39,7 @@ interface EditViewObserver {
                             menu.isVisible = false
                         }
                         menu.add(add)
-                        menu.show(this@JsonObjectPanel, 100, 100);
+                        menu.show(this@JsonObjectPanel, 100, 100)
                     }
 
                 }
@@ -135,7 +133,7 @@ interface EditViewObserver {
                         }
                         //menu.add(add)
                         menu.add(deleteSelected)
-                        menu.show(this@JsonObjectProperty, 100, 100);
+                        menu.show(this@JsonObjectProperty, 100, 100)
                     }
                 }
             })
@@ -154,13 +152,9 @@ interface EditViewObserver {
             //textField.text = value
         }
 
-        fun getLabel(): JLabel {
-            return label
-        }
 
-        fun getTextField(): JTextField {
-            return textField
-        }
+
+
     }
 
 }
@@ -171,7 +165,7 @@ interface JsonArrayEditorViewObserver {
     fun modifyValue(key: String, newValue: String, oldValue: String){ }
 }
 
-class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
+class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPanel() {
     private val observers: MutableList<JsonArrayEditorViewObserver> = mutableListOf()
     val nestedPanels: MutableMap<String, JPanel> = mutableMapOf()
     var keys = 1
@@ -201,7 +195,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                         menu.isVisible = false
                     }
                     menu.add(add)
-                    menu.show(this@JsonArrayPanel, 100, 100);
+                    menu.show(this@JsonArrayPanel, 100, 100)
                 }
 
             }
@@ -224,8 +218,9 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
     //TODO ALTERAR ISTO E OUTRAS (JSON ARRAY OBSERVER) QUE RECEBEM "KEY" JA QUE DEVERIA SER VALUE
     fun propertyAdded(key: String) {
         println("4 UPDATE VIEW")
-        println("ARR PROPERTY ADDED: |${keys.toString()}|")
-        add(JsonArrayProperty(keys.toString(), "N/A"))
+        //TODO ele do key recebe um keys.toString
+        println("ARR PROPERTY ADDED: |${keys}| |${key}|")
+        add(JsonArrayProperty(key, "N/A"))
         keys++
         revalidate()
         repaint()
@@ -244,7 +239,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
         revalidate()
         repaint()
     }
-    //TODO NOT REMOVING THE ASSOCIATED PANEL
     fun propertyModified(key: String, newValue: String, oldValue: String) {
         //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
         if (nestedPanels.containsKey(key)) {
@@ -255,7 +249,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
         val properties = components.filterIsInstance<JsonArrayProperty>()
 
         val property = properties.find { it.getKey() == key }
-        println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
+        //println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
         property?.setValue(newValue)
         createNestedPanel(key, newValue, this)
         revalidate()
@@ -292,7 +286,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                         val deleteSelected = JButton("delete")
                         deleteSelected.addActionListener {
                             observers.forEach {
-                                println("CLICKED TO REMOVE KEY: ${key} VALUE: |${value}|")
+                                println("CLICKED TO REMOVE KEY: $key VALUE: |$value|")
                                 //TODO ele vai ter que mandar mais alguma coisa de forma a informar qual é o painel associado
                                 //TODO MUDAR O REMOVE VALUE DE FORMA A MANDAR nestedPanels[key], PARA O MODELO RECEBER E APAGAR ESSE PAINEL
                                 // ELE TERÁ QUE DEPOIS VAI TER QUE IR BUSCAR O JSONDATA, CONFORME ESTA EM CIMA E IR APAGAR O QUE É IGUAL
@@ -301,7 +295,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
                         }
                         //menu.add(add)
                         menu.add(deleteSelected)
-                        menu.show(this@JsonArrayProperty, 100, 100);
+                        menu.show(this@JsonArrayProperty, 100, 100)
                     }
                 }
             })
@@ -322,9 +316,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder) : JPanel() {
             //textField.text = value
         }
 
-        fun getTextField(): JTextField {
-            return textField
-        }
+
     }
 
 }

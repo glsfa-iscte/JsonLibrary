@@ -8,13 +8,12 @@ import javax.swing.JScrollPane
 // EDITOR MUST SHOW CONTENTS OF A JSON                              DONE
 // MUST BE ABLE TO EDIT VISIBLE VALUES                              DONE
 // MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT       DONE
-// MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY
+// MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY          DONE
 // MUST HAVE A STACK TO PROVIDE UNDO
 // ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAS SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT, either change the model or change call "properties?.values?.updateDepth(depth)"
-// NESTED ARRAY CANT PROPAGATE CHANGES TO PARENT, IT ONLY HAS THE INITIAL REFERENCE TO IT, SO THE ARR REMAINS EMPTY
 
 
-val model = JsonObjectBuilder()
+internal val model = JsonObjectBuilder()
 
 fun main() {
     val frame = JFrame("Josue - JSON Object Editor").apply {
@@ -59,27 +58,18 @@ fun main() {
 //TODO se ele criar um painel, o que eu tenho que fazer é, o parentJPanel vai ter que escutar se o modelo do JsonArray filho mudou, se mudar ele tem que chamar o JsonData, de forma a ser recalculado
 // Tera que ser tambem adicionado ao JsonArrayPanel
 // na parte que sao adicionados os observadores vai adicionar
-fun createNestedPanel(panelKey: String, newValue: String, parentJPanel: JPanel) {
-    //DEBUG
-    if(parentJPanel is JsonObjectPanel){
-        println("OBJ PARENT DATA: |${parentJPanel.model.data}|")
-    }
-    if(parentJPanel is JsonArrayPanel){
-        println("ARR PARENT DATA: |${parentJPanel.model.data}|")
-    }
+internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel: JPanel) {
     if (newValue == ":") {
         val newNestedModel = JsonObjectBuilder()
         val newNestedPanel = JsonObjectPanel(newNestedModel)
         //ISTO TRATA DE LIGAR O NESTED AO PAI
         if(parentJPanel is JsonObjectPanel){
-            parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-            parentJPanel.nestedPanels.put(panelKey, newNestedPanel)
-        }else{
-            if(parentJPanel is JsonArrayPanel){
-                parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-                parentJPanel.nestedPanels.put(panelKey, newNestedPanel)
-            }
-    }
+            parentJPanel.model.data[panelKey] = newNestedModel.jsonData
+            parentJPanel.nestedPanels[panelKey] = newNestedPanel
+        }else if(parentJPanel is JsonArrayPanel){
+            parentJPanel.model.data[panelKey] = newNestedModel.jsonData
+            parentJPanel.nestedPanels[panelKey] = newNestedPanel
+        }
         // Add observers to the new panel
         newNestedPanel.addObserver(object : EditViewObserver {
             override fun addProperty(key: String) {
@@ -100,58 +90,33 @@ fun createNestedPanel(panelKey: String, newValue: String, parentJPanel: JPanel) 
         parentJPanel.add(newNestedPanel)
     }
     if(newValue == ""){
-        println("1 CREATED ARR")
         val newNestedModel = JsonArrayBuilder()
-        val newNestedPanel = JsonArrayPanel(newNestedModel)
+        val newNestedPanel = JsonArrayPanel(newNestedModel, parentJPanel)
 
 
         if(parentJPanel is JsonObjectPanel){
-            parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-            parentJPanel.nestedPanels.put(panelKey, newNestedPanel)
-        }else{
-            if(parentJPanel is JsonArrayPanel){
-                parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-                parentJPanel.nestedPanels.put(panelKey, newNestedPanel)
-            }
+            parentJPanel.model.data[panelKey] = newNestedModel.jsonData
+            parentJPanel.nestedPanels[panelKey] = newNestedPanel
+        }else if(parentJPanel is JsonArrayPanel){
+            parentJPanel.model.data[panelKey] = newNestedModel.jsonData
+            parentJPanel.nestedPanels[panelKey] = newNestedPanel
         }
-        //MUST CHECK LISTENERS TO UPDATE
-        // newNestedModel.addParentObserver(object: JsonModelListener{
 
-        //})
-        // Add observers to the new panel
         newNestedPanel.addObserver(object : JsonArrayEditorViewObserver {
             override fun addValue(key: String) {
                 println("2 CONTROLLER")
                 newNestedModel.addValue(key)
-                if(parentJPanel is JsonObjectPanel)
-                    parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-                else
-                    if(parentJPanel is JsonArrayPanel)
-                        parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-                model.refreshModel()
+                updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
 
             override fun removeValue(key: String) {
                 newNestedModel.removeValue(key)
-                if(parentJPanel is JsonObjectPanel)
-                    parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-                else
-                    if(parentJPanel is JsonArrayPanel)
-                        parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-                model.refreshModel()
+                updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
 
-            override fun modifyValue(key: String, newValue: String, oldValue:String) {
+            override fun modifyValue(key: String, newValue: String, oldValue: String) {
                 newNestedModel.modifyValue(key, newValue, oldValue)
-                if(parentJPanel is JsonObjectPanel)
-                    parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-                else
-                    if(parentJPanel is JsonArrayPanel) {
-                        parentJPanel.model.data.put(panelKey, newNestedModel.jsonData)
-                        println("CONTROLLER ARR MOD |${parentJPanel.model.data}| |${newNestedModel.jsonData}|")
-                        println("IT WASNT MODIFIED DUE TO CALCULATED PROPERTY MODEL DATA: |${model.jsonData}|")
-                    }
-                model.refreshModel()
+                updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
         })
         parentJPanel.add(newNestedPanel)
@@ -159,4 +124,51 @@ fun createNestedPanel(panelKey: String, newValue: String, parentJPanel: JPanel) 
     }
 }
 
+/**
+ * Update parent reference updates the JsonArray references along the hierarquies, since JsonArray JsonData is declared as a calculated property,
+ * even i data changes, unless its called, it won't reflect those changes
+ * Recusively traverses up the hierarqui, updating that parent's model with the new addition/subtraction or modification of a JsonArrayProperty
+ *
+ * @param panelKey
+ * @param parentJPanel
+ * @param newNestedModel
+ */
+private fun updateParentReference(panelKey: String, parentJPanel: JPanel, newNestedModel: JsonArrayBuilder){
+    if(parentJPanel is JsonObjectPanel){
+        parentJPanel.model.data[panelKey] = newNestedModel.jsonData
+        println("OBJ MODEL ${parentJPanel.model.data}")
+    }else{
+        val parentArrPanel = (parentJPanel as JsonArrayPanel)
+        //conects the child to the parent
+        parentJPanel.model.data[panelKey] = newNestedModel.jsonData
+        val gradParentPanel = parentArrPanel.parentPanel
+        var grandparentePanelKey = "1"
+        if(gradParentPanel is JsonObjectPanel)
+            grandparentePanelKey = getKeyByPanel(parentArrPanel, gradParentPanel.nestedPanels)!!
+        else
+            if(gradParentPanel is JsonArrayPanel)
+                grandparentePanelKey = getKeyByPanel(parentArrPanel, gradParentPanel.nestedPanels)!!
 
+        //println("panelKey: |${panelKey}|, parentJPanel: |${parentJPanel}|, newNestedModel: |${newNestedModel}|")
+        println("grandparentePanelKey: |${grandparentePanelKey}|, parentModel: |${parentJPanel.model.data}|")
+        updateParentReference(grandparentePanelKey, gradParentPanel, parentJPanel.getAssociatedModel())
+    }
+}
+
+private fun getKeyByPanel(panel: JPanel, map: MutableMap<String, JPanel>): String? {
+    for ((key, value) in map) {
+        if (value == panel) {
+            return key
+        }
+    }
+    return null
+}
+
+private fun updateParentAndRefreshModel(parentJPanel: JPanel, panelKey: String, newNestedModel: JsonArrayBuilder, model: JsonObjectBuilder) {
+    if (parentJPanel is JsonObjectPanel) {
+        parentJPanel.model.data[panelKey] = newNestedModel.jsonData
+    } else if (parentJPanel is JsonArrayPanel) {
+        updateParentReference(panelKey, parentJPanel, newNestedModel)
+    }
+    model.refreshModel()
+}

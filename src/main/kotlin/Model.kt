@@ -69,7 +69,7 @@ fun parseToOriginalReturnType(input: String): Any? {
     return when {
         input == ":" -> mapOf<Any, Any>()
         input == "N/A" || input == "null" -> null
-        input.isNullOrBlank() -> listOf<Any>()
+        input.isBlank() -> listOf<Any>()
         input.toIntOrNull() != null -> input.toInt()
         input.toDoubleOrNull() != null -> input.toDouble()
         input.toBooleanStrictOrNull() != null -> input.toBoolean()
@@ -83,7 +83,7 @@ interface JsonObjectObserver {
     fun refreshModel(){ }
 }
 
-class JsonObjectBuilder() {
+class JsonObjectBuilder {
     var data = mutableMapOf<String, JsonValue>()
     var jsonData = JsonObject(data)
     private val observers = mutableListOf<JsonObjectObserver>()
@@ -97,7 +97,7 @@ class JsonObjectBuilder() {
     }
 
     fun addProperty(key: String) {
-        data.put(key, JsonNull())
+        data[key] = JsonNull()
         observers.forEach {
             it.addProperty(key)
         }
@@ -115,7 +115,7 @@ class JsonObjectBuilder() {
         if(oldValue != newValue) {
             val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
             println("OBJECT MODEL |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
-            data.put(key, jsonValue)
+            data[key] = jsonValue
             observers.forEach {
                 //ALTERED SO THAT IT AVOIDS SETTING THE NEW OBJECT WITH UNNECESSARY SPACES
                 // it.modifyProperty(key, jsonValue.toJsonString, jsonValue.toJsonString)
@@ -129,11 +129,6 @@ class JsonObjectBuilder() {
             it.refreshModel()
         }
     }
-    fun compareStrings(string1: String, string2: String): Boolean {
-        val transformedString1 = string1.trim().replace("\\\"", "").trim()
-        val transformedString2 = string2.trim().replace("\\\"", "").trim()
-        return transformedString1 == transformedString2
-    }
 }
 
 //Kinterface JsonModelListener {
@@ -144,9 +139,9 @@ interface JsonArrayObserver {
     fun removeValue(key: String){ }
     fun modifyValue(key: String, newValue: String, oldValue: String){ }
 }
-class JsonArrayBuilder() {
+class JsonArrayBuilder {
     var data = mutableMapOf<String, JsonValue>()
-    //CHANGED SO THAT I DONT HAVE TO MANUALLY UPDATE IT
+    //CHANGED SO THAT I DON'T HAVE TO MANUALLY UPDATE IT
     //var jsonData = JsonArray(data.values.toList())
     val jsonData: JsonArray
         get() = JsonArray(data.values.toList())
@@ -173,7 +168,7 @@ class JsonArrayBuilder() {
 
     fun addValue(key: String) {
         println("3 MODEL")
-        data.put(key, JsonNull())
+        data[key] = JsonNull()
         //jsonData = JsonArray(data.values.toList())
         println("DATA HAS: |${data.values}| JSONARR: |${jsonData}|")
         //K notifyParent()
@@ -193,7 +188,7 @@ class JsonArrayBuilder() {
         if(oldValue != newValue) {
             val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
             println("ARRAY MODEL |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
-            data.put(key, jsonValue)
+            data[key] = jsonValue
             //jsonData = JsonArray(data.values.toList())
             //K notifyParent()
             observers.forEach {
@@ -222,7 +217,7 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
     /**
      * To json string If the Json Object is empty, it returns the representation of an empty Json Object, { } else it returns each name value pair as "name" : value
      */
-    //ELVIS OPERATOR WAS REMOVED IN FAVOUR OF THE CHECK, SO THAT IF PROPERIES IS NULL OR EMPTY, IT RETURNS "{}" WHERE AS BEFORE IT ONLY RETURNED THAT IF PROPERTIES WAS NULL
+    //ELVIS OPERATOR WAS REMOVED IN FAVOUR OF THE CHECK, SO THAT IF PROPERIES IS NULL OR EMPTY, IT RETURNS "{}" WHEREAS BEFORE IT ONLY RETURNED THAT IF PROPERTIES WAS NULL
     //TEST SUITE PASSED
     override val toJsonString: String
         get() {
@@ -231,7 +226,7 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
             } else {
                 properties.entries.joinToString(
                     separator = ",\n",
-                    // Removed to add "${"\t".repeat(depth)} in Json Array, so that Json Values are properly indented and so that Json Value doesnt have depth, causing every jsonValue to have init
+                    // Removed to add "${"\t".repeat(depth)} in Json Array, so that Json Values are properly indented and so that Json Value doesn't have depth, causing every jsonValue to have init
                     //prefix = "${"\t".repeat(depth-1)}{\n",
                     prefix = "{\n",
                     postfix = "\n${"\t".repeat(depth - 1)}}"
@@ -262,7 +257,7 @@ data class JsonArray(val valueList: List<JsonValue>? = null) : JsonStructure {
      */
     override val toJsonString: String
         get() {
-            //ELVIS OPERATOR WAS REMOVED IN FAVOUR OF THE CHECK, SO THAT IF PROPERIES IS NULL OR EMPTY, IT RETURNS "{}" WHERE AS BEFORE IT ONLY RETURNED THAT IF PROPERTIES WAS NULL
+            //ELVIS OPERATOR WAS REMOVED IN FAVOUR OF THE CHECK, SO THAT IF PROPERIES IS NULL OR EMPTY, IT RETURNS "{}" WHEREAS BEFORE IT ONLY RETURNED THAT IF PROPERTIES WAS NULL
             //TEST SUITE PASSED
             return if (valueList.isNullOrEmpty()) {
                 "[ ]"
