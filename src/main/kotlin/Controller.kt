@@ -11,12 +11,12 @@ import javax.swing.JScrollPane
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY          DONE
 // MUST HAVE A STACK TO PROVIDE UNDO
 // ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAS SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT, either change the model or change call "properties?.values?.updateDepth(depth)"
-
+// PREVENT JSONOBJECT TO HAVE DUPLICATE KEY (added check in the model)  DONE
 
 internal val model = JsonObjectBuilder()
 
 fun main() {
-    val frame = JFrame("Josue - JSON Object Editor").apply {
+    val frame = JFrame("JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         layout = GridLayout(0, 2)
         size = Dimension(600, 600)
@@ -26,16 +26,16 @@ fun main() {
 
         val editorView = JsonObjectPanel(model)//EditorView(model)
 
-        editorView.addObserver(object : EditViewObserver{
-            override fun addProperty(key: String) {
+        editorView.addObserver(object : EditorViewObserver{
+            override fun addItem(key: String) {
                 model.addProperty(key)
             }
 
-            override fun removeProperty(key: String) {
+            override fun removeItem(key: String) {
                 model.removeProperty(key)
             }
 
-            override fun modifyProperty(key: String, newValue: String, oldValue: String) {
+            override fun modifyItem(key: String, newValue: String, oldValue: String) {
                 model.modifyValue(key, newValue, oldValue)
             }
         })
@@ -68,18 +68,18 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
             parentJPanel.nestedPanels[panelKey] = newNestedPanel
         }
         // Add observers to the new panel
-        newNestedPanel.addObserver(object : EditViewObserver {
-            override fun addProperty(key: String) {
+        newNestedPanel.addObserver(object : EditorViewObserver {
+            override fun addItem(key: String) {
                 newNestedModel.addProperty(key)
                 model.refreshModel()
             }
 
-            override fun removeProperty(key: String) {
+            override fun removeItem(key: String) {
                 newNestedModel.removeProperty(key)
                 model.refreshModel()
             }
 
-            override fun modifyProperty(key: String, newValue: String, oldValue:String) {
+            override fun modifyItem(key: String, newValue: String, oldValue:String) {
                 newNestedModel.modifyValue(key, newValue, oldValue)
                 model.refreshModel()
             }
@@ -99,19 +99,19 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
             parentJPanel.nestedPanels[panelKey] = newNestedPanel
         }
 
-        newNestedPanel.addObserver(object : JsonArrayEditorViewObserver {
-            override fun addValue(key: String) {
+        newNestedPanel.addObserver(object : EditorViewObserver {
+            override fun addItem(key: String) {
                 //println("2 CONTROLLER")
                 newNestedModel.addValue(key)
                 updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
 
-            override fun removeValue(key: String) {
+            override fun removeItem(key: String) {
                 newNestedModel.removeValue(key)
                 updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
 
-            override fun modifyValue(key: String, newValue: String, oldValue: String) {
+            override fun modifyItem(key: String, newValue: String, oldValue: String) {
                 newNestedModel.modifyValue(key, newValue, oldValue)
                 updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
@@ -169,3 +169,9 @@ private fun updateParentAndRefreshModel(parentJPanel: JPanel, panelKey: String, 
     }
     model.refreshModel()
 }
+
+interface Command{
+    fun run()
+    fun undo()
+}
+class AddCommand(val model: JsonObjectBuilder)

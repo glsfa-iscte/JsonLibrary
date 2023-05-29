@@ -76,36 +76,57 @@ internal fun parseToOriginalReturnType(input: String): Any? {
         else -> input
     }
 }
-interface JsonObjectObserver {
-    fun addProperty(key: String) { }
-    fun removeProperty(key: String){ }
-    fun modifyProperty(key: String, newValue: String, oldValue: String){ }
-    fun refreshModel(){ }
+//CONDENSED JsonObjectObserver AND JsonArrayObserver INTO ONE INTERFACE, TO REDUCE DUPLICATE CODE
+interface JsonBuilderObserver {
+    fun addItem(key: String) { }
+    fun removeItem(key: String) { }
+    fun modifyItem(key: String, newValue: String, oldValue: String) { }
+    fun refreshModel() { }
 }
+//interface JsonObjectObserver {
+//    fun addProperty(key: String) { }
+//    fun removeProperty(key: String){ }
+//    fun modifyProperty(key: String, newValue: String, oldValue: String){ }
+//    fun refreshModel(){ }
+//}
+abstract class JsonBuilder{
+    var data = mutableMapOf<String, JsonValue>()
+    abstract var jsonData: JsonStructure
 
+    private val observers = mutableListOf<JsonBuilderObserver>()
+    fun addObserver(observer: JsonBuilderObserver) {
+        observers.add(observer)
+    }
+    fun removeObserver(observer: JsonBuilderObserver) {
+        observers.remove(observer)
+    }
+    abstract fun add(key: String)
+    abstract fun remove(key: String)
+    abstract fun modify(key: String, newValue: String, oldValue: String)
+}
 class JsonObjectBuilder {
     var data = mutableMapOf<String, JsonValue>()
     var jsonData = JsonObject(data)
-    private val observers = mutableListOf<JsonObjectObserver>()
-
-    fun addObserver(observer: JsonObjectObserver) {
+    //private val observers = mutableListOf<JsonObjectObserver>()
+    private val observers = mutableListOf<JsonBuilderObserver>()
+    fun addObserver(observer: JsonBuilderObserver) {
         observers.add(observer)
     }
-
-    fun removeObserver(observer: JsonObjectObserver) {
+    fun removeObserver(observer: JsonBuilderObserver) {
         observers.remove(observer)
     }
-
     fun addProperty(key: String) {
-        data[key] = JsonNull()
-        observers.forEach {
-            it.addProperty(key)
+        if(!model.data.containsKey(key)) {
+            data[key] = JsonNull()
+            observers.forEach {
+                it.addItem(key)
+            }
         }
     }
     fun removeProperty(key: String) {
         data.remove(key)
         observers.forEach {
-            it.removeProperty(key)
+            it.removeItem(key)
         }
     }
     fun modifyValue(key:String, newValue: String, oldValue: String) {
@@ -119,7 +140,7 @@ class JsonObjectBuilder {
             observers.forEach {
                 //ALTERED SO THAT IT AVOIDS SETTING THE NEW OBJECT WITH UNNECESSARY SPACES
                 // it.modifyProperty(key, jsonValue.toJsonString, jsonValue.toJsonString)
-                it.modifyProperty(key, newValue, newValue)
+                it.modifyItem(key, newValue, newValue)
             }
         }
     }
@@ -131,11 +152,11 @@ class JsonObjectBuilder {
     }
 }
 
-interface JsonArrayObserver {
-    fun addValue(key: String) { }
-    fun removeValue(key: String){ }
-    fun modifyValue(key: String, newValue: String, oldValue: String){ }
-}
+//interface JsonArrayObserver {
+//    fun addValue(key: String) { }
+//    fun removeValue(key: String){ }
+//    fun modifyValue(key: String, newValue: String, oldValue: String){ }
+//}
 
 class JsonArrayBuilder {
     var data = mutableMapOf<String, JsonValue>()
@@ -144,14 +165,14 @@ class JsonArrayBuilder {
     val jsonData: JsonArray
         get() = JsonArray(data.values.toList())
 
-    private val observers = mutableListOf<JsonArrayObserver>()
+    private val observers = mutableListOf<JsonBuilderObserver>()
 
-    fun addObserver(observer: JsonArrayObserver) {
+    fun addObserver(observer: JsonBuilderObserver) {
         observers.add(observer)
     }
 
 
-    fun removeObserver(observer: JsonArrayObserver) {
+    fun removeObserver(observer: JsonBuilderObserver) {
         observers.remove(observer)
     }
 
@@ -160,13 +181,13 @@ class JsonArrayBuilder {
         data[key] = JsonNull()
         //println("DATA HAS: |${data.values}| JSONARR: |${jsonData}|")
         observers.forEach {
-            it.addValue(key)
+            it.addItem(key)
         }
     }
     fun removeValue(key:String) {
         data.remove(key)
         observers.forEach {
-            it.removeValue(key)
+            it.removeItem(key)
         }
     }
     fun modifyValue(key:String, newValue: String, oldValue: String) {
@@ -176,7 +197,7 @@ class JsonArrayBuilder {
             data[key] = jsonValue
             observers.forEach {
                 //ALTERED SO THAT IT AVOIDS SETTING THE NEW OBJECT WITH UNNECESSARY SPACES
-                it.modifyValue(key, newValue, newValue)
+                it.modifyItem(key, newValue, newValue)
             }
         }
     }

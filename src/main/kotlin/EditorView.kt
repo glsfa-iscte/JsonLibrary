@@ -7,16 +7,16 @@ import javax.swing.*
 
 //TODO
 // USAR SO UMA INTERFACE PARA OS OBJETOS E PARA O ARRAY, NO MODEL E NA VIEW
-interface EditViewObserver {
-    fun addProperty(key: String) { }
-    fun removeProperty(key: String){ }
-    fun modifyProperty(key: String, newValue: String, oldValue: String){ }
+interface EditorViewObserver {
+    fun addItem(key: String) { }
+    fun removeItem(key: String){ }
+    fun modifyItem(key: String, newValue: String, oldValue: String){ }
 }
     class JsonObjectPanel(val model: JsonObjectBuilder) : JPanel() {
-        private val observers: MutableList<EditViewObserver> = mutableListOf()
+        private val observers: MutableList<EditorViewObserver> = mutableListOf()
         // CHANGED TO JPANEL TO ALLOW NESTED OBJECT AND ARRAY val nestedPanels: MutableMap<String, JsonObjectPanel> = mutableMapOf()
         val nestedPanels: MutableMap<String, JPanel> = mutableMapOf()
-        fun addObserver(observer: EditViewObserver) = observers.add(observer)
+        fun addObserver(observer: EditorViewObserver) = observers.add(observer)
         init {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             alignmentX = Component.LEFT_ALIGNMENT
@@ -34,7 +34,7 @@ interface EditViewObserver {
                         add.addActionListener {
                             val text = JOptionPane.showInputDialog("text")
                             observers.forEach {
-                                it.addProperty(text)
+                                it.addItem(text)
                             }
                             menu.isVisible = false
                         }
@@ -44,16 +44,16 @@ interface EditViewObserver {
 
                 }
             })
-            model.addObserver(object: JsonObjectObserver{
-                override fun addProperty(key: String) {
+            model.addObserver(object: JsonBuilderObserver{
+                override fun addItem(key: String) {
                     propertyAdded(key)
                 }
 
-                override fun removeProperty(key: String) {
+                override fun removeItem(key: String) {
                     propertyRemoved(key)
                 }
 
-                override fun modifyProperty(key: String, newValue: String, oldValue: String) {
+                override fun modifyItem(key: String, newValue: String, oldValue: String) {
                     propertyModified(key, newValue, oldValue)
                 }
             })
@@ -113,7 +113,7 @@ interface EditViewObserver {
                 override fun focusLost(e: FocusEvent) {
 
                     observers.forEach {
-                        it.modifyProperty(label.text, textField.text, value)
+                        it.modifyItem(label.text, textField.text, value)
                     }
                 }
             })
@@ -126,7 +126,7 @@ interface EditViewObserver {
                         val deleteSelected = JButton("delete")
                         deleteSelected.addActionListener {
                             observers.forEach {
-                                it.removeProperty(key)
+                                it.removeItem(key)
                             }
                         }
                         //menu.add(add)
@@ -149,26 +149,22 @@ interface EditViewObserver {
             value = newValue
             //textField.text = value
         }
-
-
-
-
     }
 
 }
-
-interface JsonArrayEditorViewObserver {
-    fun addValue(key: String) { }
-    fun removeValue(key: String){ }
-    fun modifyValue(key: String, newValue: String, oldValue: String){ }
-}
+//COMENTED INTERFACE AND CONDESED OBJECT AND ARRAY INTO EditorViewObserver, since both have the same functionality
+//interface JsonArrayEditorViewObserver {
+//   fun addValue(key: String) { }
+//    fun removeValue(key: String){ }
+//    fun modifyValue(key: String, newValue: String, oldValue: String){ }
+//}
 
 class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPanel() {
-    private val observers: MutableList<JsonArrayEditorViewObserver> = mutableListOf()
+    private val observers: MutableList<EditorViewObserver> = mutableListOf()
     val nestedPanels: MutableMap<String, JPanel> = mutableMapOf()
     var keys = 1
     fun getAssociatedModel()= model
-    fun addObserver(observer: JsonArrayEditorViewObserver) = observers.add(observer)
+    fun addObserver(observer: EditorViewObserver) = observers.add(observer)
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -188,7 +184,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                         //val text = JOptionPane.showInputDialog("text")
                         observers.forEach {
                             //println("1 CLICK ADD VIEW")
-                            it.addValue(keys.toString())
+                            it.addItem(keys.toString())
                         }
                         menu.isVisible = false
                     }
@@ -198,22 +194,21 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
 
             }
         })
-        model.addObserver(object : JsonArrayObserver {
-            override fun addValue(key: String) {
+        model.addObserver(object : JsonBuilderObserver {
+            override fun addItem(key: String) {
                 propertyAdded(key)
             }
 
-            override fun removeValue(key: String) {
+            override fun removeItem(key: String) {
                 propertyRemoved(key)
             }
 
-            override fun modifyValue(key: String, newValue: String, oldValue: String) {
+            override fun modifyItem(key: String, newValue: String, oldValue: String) {
                 propertyModified(key, newValue, oldValue)
             }
         })
 
     }
-    //TODO ALTERAR ISTO E OUTRAS (JSON ARRAY OBSERVER) QUE RECEBEM "KEY" JA QUE DEVERIA SER VALUE
     fun propertyAdded(key: String) {
         //println("4 UPDATE VIEW")
         //println("ARR PROPERTY ADDED: |${keys}| |${key}|")
@@ -270,7 +265,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                 override fun focusLost(e: FocusEvent) {
                     observers.forEach {
                         //println("MODIFYING TO: |${key}| |${textField.text}| |${value}|")
-                        it.modifyValue(key, textField.text, value)
+                        it.modifyItem(key, textField.text, value)
                     }
                 }
             })
@@ -284,7 +279,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                         deleteSelected.addActionListener {
                             observers.forEach {
                                 //println("CLICKED TO REMOVE KEY: $key VALUE: |$value|")
-                                it.removeValue(key)
+                                it.removeItem(key)
                             }
                         }
                         //menu.add(add)
