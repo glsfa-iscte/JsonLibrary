@@ -4,9 +4,6 @@ import java.awt.Dimension
 import java.awt.event.*
 import javax.swing.*
 
-
-//TODO
-// USAR SO UMA INTERFACE PARA OS OBJETOS E PARA O ARRAY, NO MODEL E NA VIEW
 interface EditorViewObserver {
     fun addItem(key: String) { }
     fun removeItem(key: String){ }
@@ -147,7 +144,7 @@ interface EditorViewObserver {
 
         fun setValue(newValue: String) {
             value = newValue
-            //textField.text = value
+            textField.text = value
         }
     }
 
@@ -302,7 +299,8 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
 
         fun setValue(newValue: String) {
             value = newValue
-            //textField.text = value
+            //UNCOMENTED TO CHANGE THE textField, when undo calls a property modified, so that the text field reflects the current value
+            textField.text = value
         }
 
 

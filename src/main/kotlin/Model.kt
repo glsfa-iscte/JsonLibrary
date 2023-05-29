@@ -90,10 +90,10 @@ interface JsonBuilderObserver {
 //    fun refreshModel(){ }
 //}
 abstract class JsonBuilder{
-    var data = mutableMapOf<String, JsonValue>()
-    abstract var jsonData: JsonStructure
+    val data = mutableMapOf<String, JsonValue>()
+    abstract val jsonData: JsonStructure
 
-    private val observers = mutableListOf<JsonBuilderObserver>()
+    val observers = mutableListOf<JsonBuilderObserver>()
     fun addObserver(observer: JsonBuilderObserver) {
         observers.add(observer)
     }
@@ -101,9 +101,51 @@ abstract class JsonBuilder{
         observers.remove(observer)
     }
     abstract fun add(key: String)
-    abstract fun remove(key: String)
-    abstract fun modify(key: String, newValue: String, oldValue: String)
+    fun remove(key: String){
+        data.remove(key)
+        observers.forEach {
+            it.removeItem(key)
+        }
+    }
+     fun modify(key: String, newValue: String, oldValue: String) {
+        if (oldValue != newValue) {
+            val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+            data[key] = jsonValue
+            observers.forEach {
+                it.modifyItem(key, newValue, newValue)
+            }
+        }
+    }
 }
+class JsonObjectBuilder : JsonBuilder() {
+    override val jsonData: JsonStructure = JsonObject(data)
+
+    override fun add(key: String) {
+        if (!data.containsKey(key)) {
+            data[key] = JsonNull()
+            observers.forEach {
+                it.addItem(key)
+            }
+        }
+    }
+    fun refreshModel(){
+        observers.forEach {
+            it.refreshModel()
+        }
+    }
+}
+class JsonArrayBuilder : JsonBuilder() {
+    override val jsonData: JsonStructure
+        get() = JsonArray(data.values.toList())
+
+    override fun add(key: String) {
+        data[key] = JsonNull()
+        observers.forEach {
+            it.addItem(key)
+        }
+    }
+}
+/*
 class JsonObjectBuilder {
     var data = mutableMapOf<String, JsonValue>()
     var jsonData = JsonObject(data)
@@ -116,7 +158,8 @@ class JsonObjectBuilder {
         observers.remove(observer)
     }
     fun addProperty(key: String) {
-        if(!model.data.containsKey(key)) {
+    //THIS WAS model.data instead of just data
+        if(!data.containsKey(key)) {
             data[key] = JsonNull()
             observers.forEach {
                 it.addItem(key)
@@ -202,6 +245,8 @@ class JsonArrayBuilder {
         }
     }
 }
+
+ */
 /**
  * Json object - This dataclass is used to represent a Json Object
  *

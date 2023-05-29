@@ -1,21 +1,22 @@
 import java.awt.Dimension
 import java.awt.GridLayout
-import javax.swing.JFrame
-import javax.swing.JPanel
-import javax.swing.JScrollPane
+import javax.swing.*
 
 //TODO
 // EDITOR MUST SHOW CONTENTS OF A JSON                              DONE
 // MUST BE ABLE TO EDIT VISIBLE VALUES                              DONE
 // MUST BE ABLE TO ADD AND REMOVE PROPERTIES OF A JSON OBJECT       DONE
 // MUST BE ABLE TO ADD AND REMOVE ELEMENTS OF A JSON ARRAY          DONE
-// MUST HAVE A STACK TO PROVIDE UNDO
+// MUST HAVE A STACK TO PROVIDE UNDO                                DONE (se eu tiver um arr, que tiver coisas, se apagar e clicar undo ele vai adicionar um JsonNull, mas ele deveria de modificar para o que lá estava antes)
 // ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAS SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT, either change the model or change call "properties?.values?.updateDepth(depth)"
-// PREVENT JSONOBJECT TO HAVE DUPLICATE KEY (added check in the model)  DONE
+
+//TODO VOU TER QUE MUDAR O FUNCIONAMENTO DO EDITOR VIEW, DE FORMA A RESOLVER O PROBLEMA DE APAGAR UM ARR COM CONTEUDO, SE FIZER UNDO ELE CRIA UM JsonNull
+// MUDAR O BOTAO DE UNDO PARA NAO SER TAO GRANDE
 
 internal val model = JsonObjectBuilder()
-
+internal val undoStack = mutableListOf<Command>()
 fun main() {
+
     val frame = JFrame("JSON Object Editor").apply {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         layout = GridLayout(0, 2)
@@ -28,15 +29,26 @@ fun main() {
 
         editorView.addObserver(object : EditorViewObserver{
             override fun addItem(key: String) {
-                model.addProperty(key)
+                //model.add(key)
+                val addCmd = AddCommand(model, key)
+                undoStack.add(addCmd)
+                addCmd.run()
             }
 
             override fun removeItem(key: String) {
-                model.removeProperty(key)
+                //model.remove(key)
+                val rmCmd = RemoveCommand(model, key)
+                undoStack.add(rmCmd)
+                rmCmd.run()
             }
 
             override fun modifyItem(key: String, newValue: String, oldValue: String) {
-                model.modifyValue(key, newValue, oldValue)
+                //model.modify(key, newValue, oldValue)
+                if (oldValue != newValue) {
+                    val modCmd = ModifyCommand(model, key, newValue, oldValue)
+                    undoStack.add(modCmd)
+                    modCmd.run()
+                }
             }
         })
         val scrollPane = JScrollPane(editorView).apply {
@@ -45,7 +57,15 @@ fun main() {
         }
         left.add(scrollPane)
         add(left)
-
+        val undoButton = JButton("Undo")
+        undoButton.addActionListener {
+            println(undoStack.size)
+            if (undoStack.isNotEmpty()) {
+                val last = undoStack.removeLast()
+                last.undo()
+            }
+        }
+        add(undoButton)
         val right = JPanel()
         right.layout = GridLayout()
         val srcArea = TextAreaView(model)
@@ -70,18 +90,29 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
         // Add observers to the new panel
         newNestedPanel.addObserver(object : EditorViewObserver {
             override fun addItem(key: String) {
-                newNestedModel.addProperty(key)
+                //newNestedModel.add(key)
+                val addCmd = AddCommand(newNestedModel, key)
+                undoStack.add(addCmd)
+                addCmd.run()
                 model.refreshModel()
             }
 
             override fun removeItem(key: String) {
-                newNestedModel.removeProperty(key)
+                //newNestedModel.remove(key)
+                val rmCmd = RemoveCommand(newNestedModel, key)
+                undoStack.add(rmCmd)
+                rmCmd.run()
                 model.refreshModel()
             }
 
             override fun modifyItem(key: String, newValue: String, oldValue:String) {
-                newNestedModel.modifyValue(key, newValue, oldValue)
-                model.refreshModel()
+                //newNestedModel.modify(key, newValue, oldValue)
+                if (oldValue != newValue) {
+                    val modCmd = ModifyCommand(newNestedModel, key, newValue, oldValue)
+                    undoStack.add(modCmd)
+                    modCmd.run()
+                    model.refreshModel()
+                }
             }
         })
         parentJPanel.add(newNestedPanel)
@@ -102,18 +133,29 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
         newNestedPanel.addObserver(object : EditorViewObserver {
             override fun addItem(key: String) {
                 //println("2 CONTROLLER")
-                newNestedModel.addValue(key)
+                //newNestedModel.add(key)
+                val addCmd = AddCommand(newNestedModel, key)
+                undoStack.add(addCmd)
+                addCmd.run()
                 updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
 
             override fun removeItem(key: String) {
-                newNestedModel.removeValue(key)
+                //newNestedModel.remove(key)
+                val rmCmd = RemoveCommand(newNestedModel, key)
+                undoStack.add(rmCmd)
+                rmCmd.run()
                 updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
 
             override fun modifyItem(key: String, newValue: String, oldValue: String) {
-                newNestedModel.modifyValue(key, newValue, oldValue)
-                updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
+                //newNestedModel.modify(key, newValue, oldValue)
+                if (oldValue != newValue) {
+                    val modCmd = ModifyCommand(newNestedModel, key, newValue, oldValue)
+                    undoStack.add(modCmd)
+                    modCmd.run()
+                    updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
+                }
             }
         })
         parentJPanel.add(newNestedPanel)
@@ -174,4 +216,36 @@ interface Command{
     fun run()
     fun undo()
 }
-class AddCommand(val model: JsonObjectBuilder)
+
+class AddCommand(val model: JsonBuilder, val key: String):Command{
+    override fun run() {
+        model.add(key)
+    }
+
+    override fun undo() {
+        model.remove(key)
+    }
+
+}
+class RemoveCommand(val model: JsonBuilder, val key: String):Command{
+    override fun run() {
+        model.remove(key)
+        //TODO ELE TEM QUE GUARDAR O QUE ESTIVER ASSOCIADO A ESTA CHAVE
+    }
+
+    override fun undo() {
+        model.add(key)
+        //TODO SE O QUE ESTIVER ASSOCIADO A ESTA CHAVE FOR != JsonNull ele adiciona, senao ele tem que chamar o modify para colocar o conteudo correto
+    }
+
+}
+class ModifyCommand(val model: JsonBuilder, val key: String, val newValue: String, val oldValue: String):Command{
+    override fun run() {
+        model.modify(key, newValue, oldValue)
+    }
+
+    override fun undo() {
+        model.modify(key, oldValue, newValue)
+    }
+
+}
