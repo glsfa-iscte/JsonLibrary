@@ -65,7 +65,7 @@ data class JsonNull(val value: Any? = null) : JsonValue {
         get() = " null "
 }
 
-fun parseToOriginalReturnType(input: String): Any? {
+internal fun parseToOriginalReturnType(input: String): Any? {
     return when {
         input == ":" -> mapOf<Any, Any>()
         input == "N/A" || input == "null" -> null
@@ -131,14 +131,12 @@ class JsonObjectBuilder {
     }
 }
 
-//Kinterface JsonModelListener {
-//    fun onModelChanged() { }
-//}
 interface JsonArrayObserver {
-    fun addValue(value: String) { }
+    fun addValue(key: String) { }
     fun removeValue(key: String){ }
     fun modifyValue(key: String, newValue: String, oldValue: String){ }
 }
+
 class JsonArrayBuilder {
     var data = mutableMapOf<String, JsonValue>()
     //CHANGED SO THAT I DON'T HAVE TO MANUALLY UPDATE IT
@@ -147,16 +145,7 @@ class JsonArrayBuilder {
         get() = JsonArray(data.values.toList())
 
     private val observers = mutableListOf<JsonArrayObserver>()
-    //K private val parentObserver = mutableListOf<JsonModelListener>()
 
-    //K fun addParentObserver(observer: JsonModelListener) {
-    //    parentObserver.add(observer)
-    //}
-    //Kprivate fun notifyParent() {
-     //   parentObserver.forEach {
-     //       it.onModelChanged()
-     //   }
-    //}
     fun addObserver(observer: JsonArrayObserver) {
         observers.add(observer)
     }
@@ -167,19 +156,15 @@ class JsonArrayBuilder {
     }
 
     fun addValue(key: String) {
-        println("3 MODEL")
+        //println("3 MODEL")
         data[key] = JsonNull()
-        //jsonData = JsonArray(data.values.toList())
-        println("DATA HAS: |${data.values}| JSONARR: |${jsonData}|")
-        //K notifyParent()
+        //println("DATA HAS: |${data.values}| JSONARR: |${jsonData}|")
         observers.forEach {
             it.addValue(key)
         }
     }
     fun removeValue(key:String) {
         data.remove(key)
-        //jsonData = JsonArray(data.values.toList())
-        //K notifyParent()
         observers.forEach {
             it.removeValue(key)
         }
@@ -187,13 +172,10 @@ class JsonArrayBuilder {
     fun modifyValue(key:String, newValue: String, oldValue: String) {
         if(oldValue != newValue) {
             val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-            println("ARRAY MODEL |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
+            //println("ARRAY MODEL |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
             data[key] = jsonValue
-            //jsonData = JsonArray(data.values.toList())
-            //K notifyParent()
             observers.forEach {
                 //ALTERED SO THAT IT AVOIDS SETTING THE NEW OBJECT WITH UNNECESSARY SPACES
-                // it.modifyProperty(key, jsonValue.toJsonString, jsonValue.toJsonString)
                 it.modifyValue(key, newValue, newValue)
             }
         }

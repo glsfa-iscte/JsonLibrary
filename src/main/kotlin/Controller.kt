@@ -55,9 +55,6 @@ fun main() {
     }
     frame.isVisible = true
 }
-//TODO se ele criar um painel, o que eu tenho que fazer é, o parentJPanel vai ter que escutar se o modelo do JsonArray filho mudou, se mudar ele tem que chamar o JsonData, de forma a ser recalculado
-// Tera que ser tambem adicionado ao JsonArrayPanel
-// na parte que sao adicionados os observadores vai adicionar
 internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel: JPanel) {
     if (newValue == ":") {
         val newNestedModel = JsonObjectBuilder()
@@ -104,7 +101,7 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
 
         newNestedPanel.addObserver(object : JsonArrayEditorViewObserver {
             override fun addValue(key: String) {
-                println("2 CONTROLLER")
+                //println("2 CONTROLLER")
                 newNestedModel.addValue(key)
                 updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, model)
             }
@@ -136,7 +133,7 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
 private fun updateParentReference(panelKey: String, parentJPanel: JPanel, newNestedModel: JsonArrayBuilder){
     if(parentJPanel is JsonObjectPanel){
         parentJPanel.model.data[panelKey] = newNestedModel.jsonData
-        println("OBJ MODEL ${parentJPanel.model.data}")
+        //println("OBJ MODEL ${parentJPanel.model.data}")
     }else{
         val parentArrPanel = (parentJPanel as JsonArrayPanel)
         //conects the child to the parent
@@ -150,7 +147,7 @@ private fun updateParentReference(panelKey: String, parentJPanel: JPanel, newNes
                 grandparentePanelKey = getKeyByPanel(parentArrPanel, gradParentPanel.nestedPanels)!!
 
         //println("panelKey: |${panelKey}|, parentJPanel: |${parentJPanel}|, newNestedModel: |${newNestedModel}|")
-        println("grandparentePanelKey: |${grandparentePanelKey}|, parentModel: |${parentJPanel.model.data}|")
+        //println("grandparentePanelKey: |${grandparentePanelKey}|, parentModel: |${parentJPanel.model.data}|")
         updateParentReference(grandparentePanelKey, gradParentPanel, parentJPanel.getAssociatedModel())
     }
 }

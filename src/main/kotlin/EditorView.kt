@@ -85,13 +85,11 @@ interface EditViewObserver {
                 nestedPanels.remove(key)
             }
             //ADDED TO UPDATE THE oldValue
-            println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
+            //println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
             val properties = components.filterIsInstance<JsonObjectProperty>()
             val property = properties.find { it.getKey() == key }
             property?.setValue(newValue)
             createNestedPanel(key, newValue, this)
-            //TODO se ele criar um painel, o numero de nested panels vai mudar, o que eu tenho que fazer é, este vai ter que escutar se o modelo do JsonArray mudou, se mudar ele tem que chamar o JsonData, de forma a ser recalculado
-            // Tera que ser tambem adicionado ao JsonArrayPanel
             revalidate()
             repaint()
         }
@@ -189,7 +187,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                     add.addActionListener {
                         //val text = JOptionPane.showInputDialog("text")
                         observers.forEach {
-                            println("1 CLICK ADD VIEW")
+                            //println("1 CLICK ADD VIEW")
                             it.addValue(keys.toString())
                         }
                         menu.isVisible = false
@@ -217,9 +215,8 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
     }
     //TODO ALTERAR ISTO E OUTRAS (JSON ARRAY OBSERVER) QUE RECEBEM "KEY" JA QUE DEVERIA SER VALUE
     fun propertyAdded(key: String) {
-        println("4 UPDATE VIEW")
-        //TODO ele do key recebe um keys.toString
-        println("ARR PROPERTY ADDED: |${keys}| |${key}|")
+        //println("4 UPDATE VIEW")
+        //println("ARR PROPERTY ADDED: |${keys}| |${key}|")
         add(JsonArrayProperty(key, "N/A"))
         keys++
         revalidate()
@@ -272,7 +269,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
             textField.addFocusListener(object : FocusAdapter() {
                 override fun focusLost(e: FocusEvent) {
                     observers.forEach {
-                        println("MODIFYING TO: |${key}| |${textField.text}| |${value}|")
+                        //println("MODIFYING TO: |${key}| |${textField.text}| |${value}|")
                         it.modifyValue(key, textField.text, value)
                     }
                 }
@@ -286,10 +283,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                         val deleteSelected = JButton("delete")
                         deleteSelected.addActionListener {
                             observers.forEach {
-                                println("CLICKED TO REMOVE KEY: $key VALUE: |$value|")
-                                //TODO ele vai ter que mandar mais alguma coisa de forma a informar qual é o painel associado
-                                //TODO MUDAR O REMOVE VALUE DE FORMA A MANDAR nestedPanels[key], PARA O MODELO RECEBER E APAGAR ESSE PAINEL
-                                // ELE TERÁ QUE DEPOIS VAI TER QUE IR BUSCAR O JSONDATA, CONFORME ESTA EM CIMA E IR APAGAR O QUE É IGUAL
+                                //println("CLICKED TO REMOVE KEY: $key VALUE: |$value|")
                                 it.removeValue(key)
                             }
                         }
