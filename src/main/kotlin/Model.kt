@@ -91,19 +91,12 @@ internal fun parseToOriginalReturnType(input: String): Any? {
         else -> input
     }
 }
-//CONDENSED JsonObjectObserver AND JsonArrayObserver INTO ONE INTERFACE, TO REDUCE DUPLICATE CODE
 interface JsonBuilderObserver {
     fun addItem(key: String, value: JsonValue) { }
     fun removeItem(key: String) { }
     fun modifyItem(key: String, newValue: String, oldValue: String) { }
     fun refreshModel() { }
 }
-//interface JsonObjectObserver {
-//    fun addProperty(key: String) { }
-//    fun removeProperty(key: String){ }
-//    fun modifyProperty(key: String, newValue: String, oldValue: String){ }
-//    fun refreshModel(){ }
-//}
 abstract class JsonBuilder{
     val data = mutableMapOf<String, JsonValue>()
     abstract val jsonData: JsonStructure
@@ -115,7 +108,6 @@ abstract class JsonBuilder{
     fun removeObserver(observer: JsonBuilderObserver) {
         observers.remove(observer)
     }
-    // CHANGED SO THAT I CAN ADD A VALUE THAT ISNT JUST JSON NULL (GOR THE UNDO STACK AND INSTANCIATION)
     abstract fun add(key: String, value:JsonValue)
     fun remove(key: String){
         data.remove(key)
@@ -125,10 +117,8 @@ abstract class JsonBuilder{
     }
      fun modify(key: String, newValue: String, oldValue: String) {
         if (oldValue != newValue) {
-            println("RCV MOD model ${data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
             val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
             data[key] = jsonValue
-            println("SND MOD model ${data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
             observers.forEach {
                 it.modifyItem(key, newValue, newValue)
             }
@@ -138,7 +128,6 @@ abstract class JsonBuilder{
 class JsonObjectBuilder(val initialJsonObject: JsonObject) : JsonBuilder() {
     override val jsonData: JsonStructure = JsonObject(data)
     init {
-        //if(initialData.isNotEmpty()) data.putAll(initialData)
         if(!initialJsonObject.properties.isNullOrEmpty()) data.putAll(initialJsonObject.properties)
     }
     override fun add(key: String, value: JsonValue) {
@@ -156,13 +145,10 @@ class JsonObjectBuilder(val initialJsonObject: JsonObject) : JsonBuilder() {
     }
 }
 class JsonArrayBuilder(val initialJsonArray: JsonArray) : JsonBuilder() {
-    //EU QUERIA MANTER USAR UMA CHAVE PARA IDENTIFICAR CADA ELEMENTO DO MODEL, PARA NAO APAGAR INCORRETAMENTE, MAS AO FAZER ISSO, TIVE QUE FAZER ESTA PROPRIEDADE CLACULADA
-    //COM ISSO DEPOIS CRIA O PROBLEMA QUE AS MUDANÇAS NÃO SAO PROPAGADAS DE FORMA INSTANTANEA ATÉ O jsonData ser acedido
     override val jsonData: JsonStructure
         get() = JsonArray(data.values.toList())
     var lastIndex: Int = -1
     init {
-        //if(initialData.isNotEmpty()) data.putAll(initialData)
         if(!initialJsonArray.valueList.isNullOrEmpty()) initialJsonArray.valueList.forEachIndexed { index, jsonValue ->
             data["$index"] = jsonValue
             lastIndex=index

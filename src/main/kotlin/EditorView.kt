@@ -23,7 +23,6 @@ interface EditorViewObserver {
             maximumSize = Dimension(Int.MAX_VALUE, Int.MAX_VALUE)
 
             //INITIALIZER
-            println("INITIALIZING MODEL: ${model.jsonData.toJsonString}")
             model.data.forEach{
                 propertyAdded(it.key, it.value)
             }
@@ -63,25 +62,6 @@ interface EditorViewObserver {
 
         }
         fun propertyAdded(key: String, value: JsonValue){
-            //add(JsonObjectProperty(key, "N/A"))
-            /* OLD JUST FOR PROGRESS CHECK
-            if(value is JsonNull) add(JsonObjectProperty(key, "N/A"))
-            else {
-                //ESTE VAI SOBRETUDO FUNCIONAR PARA QUANDO ADICIONO PELO INITIAL MODEL
-                if(value is JsonObject) {
-                    add(JsonObjectProperty(key, ":"))
-                    createNestedPanel(key, ":", this, value)
-                    println("OBJ")
-                }
-                else if(value is JsonArray) {
-                    add(JsonObjectProperty(key, ""))
-                    createNestedPanel(key, "", this, value)
-                    //add(JsonArrayPanel(JsonArrayBuilder(value), this))
-                    println("ARR")
-                }
-                else add(JsonObjectProperty(key, value.getJsonValue().toString()))
-            }
-            */
             when (value) {
                 is JsonNull -> add(JsonObjectProperty(key, "N/A"))
                 is JsonObject -> {
@@ -96,8 +76,6 @@ interface EditorViewObserver {
 
                 else -> add(JsonObjectProperty(key, value.getJsonValue().toString()))
             }
-
-            println("ADDING TO EDITOR ${key} ${value.getJsonValue().toString()}")
             revalidate()
             repaint()
         }
@@ -116,13 +94,10 @@ interface EditorViewObserver {
         }
 
         fun propertyModified(key: String, newValue: String, oldValue: String) {
-            //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
             if(nestedPanels.containsKey(key)){
                 remove(nestedPanels[key])
                 nestedPanels.remove(key)
             }
-            //ADDED TO UPDATE THE oldValue
-            //println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
             val properties = components.filterIsInstance<JsonObjectProperty>()
             val property = properties.find { it.getKey() == key }
             property?.setValue(newValue)
@@ -189,13 +164,6 @@ interface EditorViewObserver {
     }
 
 }
-//COMENTED INTERFACE AND CONDESED OBJECT AND ARRAY INTO EditorViewObserver, since both have the same functionality
-//interface JsonArrayEditorViewObserver {
-//   fun addValue(key: String) { }
-//    fun removeValue(key: String){ }
-//    fun modifyValue(key: String, newValue: String, oldValue: String){ }
-//}
-
 class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPanel() {
     private val observers: MutableList<EditorViewObserver> = mutableListOf()
     val nestedPanels: MutableMap<String, JPanel> = mutableMapOf()
@@ -212,7 +180,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
         maximumSize = Dimension(Int.MAX_VALUE, Int.MAX_VALUE)
 
         //INITIALIZER
-        println("INITIALIZING MODEL ARR: ${model.jsonData.toJsonString}")
         model.data.forEach{
             propertyAdded(it.key, it.value)
         }
@@ -224,9 +191,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                     val menu = JPopupMenu("Message")
                     val add = JButton("add")
                     add.addActionListener {
-                        //val text = JOptionPane.showInputDialog("text")
                         observers.forEach {
-                            //println("1 CLICK ADD VIEW")
                             it.addItem(keys.toString(), JsonNull())
                             keys++
                         }
@@ -254,11 +219,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
 
     }
     fun propertyAdded(key: String, value: JsonValue) {
-        //println("4 UPDATE VIEW")
-        //println("ARR PROPERTY ADDED: |${keys}| |${key}|")
-        //add(JsonArrayProperty(key, "N/A"))
-        //if(value is JsonNull) add(JsonArrayProperty(key, "N/A"))
-       // else add(JsonArrayProperty(key, value.toJsonString))
         when (value) {
             is JsonNull -> add(JsonArrayProperty(key, "N/A"))
             is JsonObject -> {
@@ -273,7 +233,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
 
             else -> add(JsonArrayProperty(key, value.getJsonValue().toString()))
         }
-        println("ADDING TO EDITOR ARR ${key} ${value.getJsonValue().toString()}")
         revalidate()
         repaint()
     }
@@ -301,7 +260,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
         val properties = components.filterIsInstance<JsonArrayProperty>()
 
         val property = properties.find { it.getKey() == key }
-        //println("FOUND KEY |${key}|, NEWVALUE |${newValue}| OLDVALUE |${oldValue}|")
         property?.setValue(newValue)
         createNestedPanel(key, newValue, this)
         revalidate()
@@ -313,7 +271,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
         private val textField: JTextField
 
         init {
-            //println("CREATING ARR PROPERTY: |${key}| |${value}|")
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             alignmentX = Component.LEFT_ALIGNMENT
             alignmentY = Component.TOP_ALIGNMENT
@@ -324,7 +281,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
             textField.addFocusListener(object : FocusAdapter() {
                 override fun focusLost(e: FocusEvent) {
                     observers.forEach {
-                        //println("MODIFYING TO: |${key}| |${textField.text}| |${value}|")
                         it.modifyItem(key, textField.text, value)
                     }
                 }
@@ -338,11 +294,9 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                         val deleteSelected = JButton("delete")
                         deleteSelected.addActionListener {
                             observers.forEach {
-                                //println("CLICKED TO REMOVE KEY: $key VALUE: |$value|")
                                 it.removeItem(key)
                             }
                         }
-                        //menu.add(add)
                         menu.add(deleteSelected)
                         menu.show(this@JsonArrayProperty, 100, 100)
                     }
@@ -362,7 +316,6 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
 
         fun setValue(newValue: String) {
             value = newValue
-            //UNCOMENTED TO CHANGE THE textField, when undo calls a property modified, so that the text field reflects the current value
             textField.text = value
         }
 
