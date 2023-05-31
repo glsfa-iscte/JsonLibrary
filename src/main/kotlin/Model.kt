@@ -145,7 +145,6 @@ class JsonObjectBuilder(val initialJsonObject: JsonObject) : JsonBuilder() {
         if (!data.containsKey(key)) {
             data[key] = value //JsonNull()
             observers.forEach {
-                //TODO ANTES DE ENVIAR ELE TEM QUE MANDAR SÓ UMA STRING DO CONTEUDO
                 it.addItem(key, value)
             }
         }

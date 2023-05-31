@@ -3,9 +3,6 @@ import java.awt.GridLayout
 import javax.swing.*
 
 //TODO ISSUES REGARDING THE TEXT AREA'S DEPTH COULD HAS SOMETHING TO DO WITH IT ONLY BEING UPDATED ON INIT, either change the model or change call "properties?.values?.updateDepth(depth)"
-// MUDAR O BOTAO DE UNDO PARA NAO SER TAO GRANDE
-// If i use the undo commands inside a JsonArray, The right side view is not warned somehow
-// UNDO IS NOT WORKING FOR NESTED
 internal val testJsonObj = JsonObject(mutableMapOf(
     "numero" to JsonNumber( 101101),
     "nome" to JsonString("Dave Farley"),
@@ -39,7 +36,9 @@ internal val inscricoes01 = JsonObject(mapOf(
     "inscritos" to inscritos
 ))
 
-internal val parentModel = JsonObjectBuilder(inscricoes01)//JsonObjectBuilder(testJsonObj)
+internal val parentModel = JsonObjectBuilder(inscricoes01)//
+//internal val parentModel = JsonObjectBuilder(testJsonObj)
+//internal val parentModel = JsonObjectBuilder(JsonObject())
 internal val undoStack = mutableListOf<Command>()
 fun main() {
 
@@ -94,7 +93,7 @@ fun main() {
 
         val undoButton = JButton("Undo")
         undoButton.addActionListener {
-            println(undoStack.size)
+            println("Undo stack "+undoStack.size)
             if (undoStack.isNotEmpty()) {
                 val last = undoStack.removeLast()
                 last.undo()
@@ -121,7 +120,7 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
         newNestedPanel.addObserver(object : EditorViewObserver {
             override fun addItem(key: String, value: JsonValue) {
                 //newNestedModel.add(key)
-                val addCmd = AddCommand(newNestedModel, key, value)
+                val addCmd = AddCommand(newNestedModel, key, value){ updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel) }
                 undoStack.add(addCmd)
                 addCmd.run()
                 parentModel.refreshModel()
@@ -129,7 +128,7 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
 
             override fun removeItem(key: String) {
                 //newNestedModel.remove(key)
-                val rmCmd = RemoveCommand(newNestedModel, key)
+                val rmCmd = RemoveCommand(newNestedModel, key){ updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel) }
                 undoStack.add(rmCmd)
                 rmCmd.run()
                 parentModel.refreshModel()
@@ -138,7 +137,7 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
             override fun modifyItem(key: String, newValue: String, oldValue:String) {
                 //newNestedModel.modify(key, newValue, oldValue)
                 if (oldValue != newValue) {
-                    val modCmd = ModifyCommand(newNestedModel, key, newValue, oldValue)
+                    val modCmd = ModifyCommand(newNestedModel, key, newValue, oldValue){ updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel) }
                     undoStack.add(modCmd)
                     modCmd.run()
                     parentModel.refreshModel()
@@ -164,27 +163,25 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
             override fun addItem(key: String, value: JsonValue) {
                 //println("2 CONTROLLER")
                 //newNestedModel.add(key)
-                val addCmd = AddCommand(newNestedModel, key, value)
+                val addCmd = AddCommand(newNestedModel, key, value) { updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel) }
                 undoStack.add(addCmd)
                 addCmd.run()
-                updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel)
             }
 
             override fun removeItem(key: String) {
                 //newNestedModel.remove(key)
-                val rmCmd = RemoveCommand(newNestedModel, key)
+                val rmCmd = RemoveCommand(newNestedModel, key) { updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel) }
                 undoStack.add(rmCmd)
                 rmCmd.run()
-                updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel)
+
             }
 
             override fun modifyItem(key: String, newValue: String, oldValue: String) {
                 //newNestedModel.modify(key, newValue, oldValue)
                 if (oldValue != newValue) {
-                    val modCmd = ModifyCommand(newNestedModel, key, newValue, oldValue)
+                    val modCmd = ModifyCommand(newNestedModel, key, newValue, oldValue) { updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel) }
                     undoStack.add(modCmd)
                     modCmd.run()
-                    updateParentAndRefreshModel(parentJPanel, panelKey, newNestedModel, parentModel)
                 }
             }
         })
@@ -202,7 +199,7 @@ internal fun createNestedPanel(panelKey: String, newValue: String, parentJPanel:
  * @param parentJPanel
  * @param newNestedModel
  */
-private fun updateParentReference(panelKey: String, parentJPanel: JPanel, newNestedModel: JsonArrayBuilder){
+private fun updateParentReference(panelKey: String, parentJPanel: JPanel, newNestedModel: JsonBuilder){
     if(parentJPanel is JsonObjectPanel){
         parentJPanel.model.data[panelKey] = newNestedModel.jsonData
         //println("OBJ MODEL ${parentJPanel.model.data}")
@@ -211,7 +208,6 @@ private fun updateParentReference(panelKey: String, parentJPanel: JPanel, newNes
         //conects the child to the parent
         parentJPanel.model.data[panelKey] = newNestedModel.jsonData
         val gradParentPanel = parentArrPanel.parentPanel
-        //TODO CHECK THIS KEY
         var grandparentePanelKey = "1"
         if(gradParentPanel is JsonObjectPanel)
             grandparentePanelKey = getKeyByPanel(parentArrPanel, gradParentPanel.nestedPanels)!!
@@ -234,7 +230,7 @@ private fun getKeyByPanel(panel: JPanel, map: MutableMap<String, JPanel>): Strin
     return null
 }
 
-private fun updateParentAndRefreshModel(parentJPanel: JPanel, panelKey: String, newNestedModel: JsonArrayBuilder, model: JsonObjectBuilder) {
+private fun updateParentAndRefreshModel(parentJPanel: JPanel, panelKey: String, newNestedModel: JsonBuilder, model: JsonObjectBuilder) {
     model.refreshModel()
     if (parentJPanel is JsonObjectPanel) {
         parentJPanel.model.data[panelKey] = newNestedModel.jsonData
@@ -248,47 +244,50 @@ interface Command{
     fun run()
     fun undo()
 }
-//TODO UNDO STACK NOT WORKING FOR NESTED ELEMENTS, IT UPDATES THE VIEW BUT NOT THE MODEL, ITS BECAUSE WHEN IT RUNS, IT CALLS updateParentReference(panelKey, parentJPanel, newNestedModel),
-// BUT WHEN I PRESS UNDO IT DOENST CALL IT, SO IT DOESNT PROPAGATE THE CHANGES TO THE PARENT
-class AddCommand(val model: JsonBuilder, val key: String, val value: JsonValue):Command{
+class AddCommand(val model: JsonBuilder, val key: String, val value: JsonValue, val updateFunction: (() -> Unit)? = null):Command{
     override fun run() {
         model.add(key, value)
+        updateFunction?.invoke()
     }
 
     override fun undo() {
         model.remove(key)
-
+        updateFunction?.invoke()
     }
 
 }
-class RemoveCommand(val model: JsonBuilder, val key: String):Command{
+class RemoveCommand(val model: JsonBuilder, val key: String, val updateFunction: (() -> Unit)? = null):Command{
     var associatedValue:JsonValue = JsonNull()
     override fun run() {
         if(model.data[key] != JsonNull())
             associatedValue = model.data[key]!!
         model.remove(key)
-        //TODO ELE TEM QUE GUARDAR O QUE ESTIVER ASSOCIADO A ESTA CHAVE
+        updateFunction?.invoke()
     }
 
     override fun undo() {
         model.add(key, associatedValue)
-        if(associatedValue != JsonNull()){
-            model.data[key] = associatedValue
-        }
-        //TODO SE O QUE ESTIVER ASSOCIADO A ESTA CHAVE FOR != JsonNull ele adiciona, senao ele tem que chamar o modify para colocar o conteudo correto
+        updateFunction?.invoke()
     }
 
 }
-class ModifyCommand(val model: JsonBuilder, val key: String, val newValue: String, val oldValue: String):Command{
+class ModifyCommand(val model: JsonBuilder, val key: String, val newValue: String, val oldValue: String, val updateFunction: (() -> Unit)? = null):Command{
+    var associatedValue:JsonValue = JsonNull()
     override fun run() {
-        println("RUN MOD model ${model.data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
+        associatedValue = model.data[key]!!
+        println("MODIFYING RUN : ${associatedValue}")
         model.modify(key, newValue, oldValue)
-
+        updateFunction?.invoke()
     }
 
     override fun undo() {
-        println("RUN UNDO model ${model.data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
-        model.modify(key, oldValue, newValue)
+        println("MODIFYING UNDO MODEL: KEY |${key}| OLDVALUE |${oldValue}| NEWVALUE |${newValue}|")
+        //if(oldValue == ":" || oldValue == "") model.add(key, associatedValue)
+        //else
+            model.modify(key, oldValue, newValue)
+        //println("MODIFYING UNDO : ${associatedValue}")
+
+        updateFunction?.invoke()
     }
 
 }
