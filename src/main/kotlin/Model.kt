@@ -95,7 +95,7 @@ internal fun parseToOriginalReturnType(input: String): Any? {
 interface JsonBuilderObserver {
     fun addItem(key: String, value: JsonValue) { }
     fun removeItem(key: String) { }
-    fun modifyItem(key: String, newValue: String, oldValue: String) { }
+    fun modifyItem(key: String, newValue: String, oldValue: String, associatedValue:JsonValue? = null) { }
     fun refreshModel() { }
 }
 //interface JsonObjectObserver {
@@ -123,15 +123,26 @@ abstract class JsonBuilder{
             it.removeItem(key)
         }
     }
-     fun modify(key: String, newValue: String, oldValue: String) {
+     fun modify(key: String, newValue: String, oldValue: String, associatedValue:JsonValue? = null) {
         if (oldValue != newValue) {
             println("RCV MOD model ${data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
-            val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-            data[key] = jsonValue
-            println("SND MOD model ${data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
-            observers.forEach {
-                it.modifyItem(key, newValue, newValue)
+            //isto verifica se veio da GUI (associated a null) ou do undo (associated != null)
+            if(associatedValue == null) {
+                val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
+                data[key] = jsonValue
+                observers.forEach {
+                    it.modifyItem(key, newValue, newValue)
+                }
+            }else{
+                println("associatedValue ${associatedValue}")
+                data[key] = associatedValue
+                println("DATA : ${data}")
+                observers.forEach {
+                    it.modifyItem(key, newValue, newValue, associatedValue)
+                }
             }
+            println("SND MOD model ${data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
+
         }
     }
 }

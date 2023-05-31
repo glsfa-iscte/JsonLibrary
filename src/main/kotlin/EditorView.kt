@@ -56,8 +56,8 @@ interface EditorViewObserver {
                     propertyRemoved(key)
                 }
 
-                override fun modifyItem(key: String, newValue: String, oldValue: String) {
-                    propertyModified(key, newValue, oldValue)
+                override fun modifyItem(key: String, newValue: String, oldValue: String, associatedValue:JsonValue?) {
+                    propertyModified(key, newValue, oldValue, associatedValue)
                 }
             })
 
@@ -115,7 +115,7 @@ interface EditorViewObserver {
             repaint()
         }
 
-        fun propertyModified(key: String, newValue: String, oldValue: String) {
+        fun propertyModified(key: String, newValue: String, oldValue: String, associatedValue: JsonValue?) {
             //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
             if(nestedPanels.containsKey(key)){
                 remove(nestedPanels[key])
@@ -247,8 +247,8 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                 propertyRemoved(key)
             }
 
-            override fun modifyItem(key: String, newValue: String, oldValue: String) {
-                propertyModified(key, newValue, oldValue)
+            override fun modifyItem(key: String, newValue: String, oldValue: String, associatedValue: JsonValue?) {
+                propertyModified(key, newValue, oldValue, associatedValue)
             }
         })
 
@@ -291,7 +291,7 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
         revalidate()
         repaint()
     }
-    fun propertyModified(key: String, newValue: String, oldValue: String) {
+    fun propertyModified(key: String, newValue: String, oldValue: String, associatedValue: JsonValue?) {
         //ADDED TO REMOVE NESTED PANELS IF THERE ARE ANY (If it changes from JsonObject to any other JsonValue it should remove the panel)
         if (nestedPanels.containsKey(key)) {
             remove(nestedPanels[key])

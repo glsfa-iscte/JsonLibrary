@@ -284,7 +284,7 @@ class ModifyCommand(val model: JsonBuilder, val key: String, val newValue: Strin
         println("MODIFYING UNDO MODEL: KEY |${key}| OLDVALUE |${oldValue}| NEWVALUE |${newValue}|")
         //if(oldValue == ":" || oldValue == "") model.add(key, associatedValue)
         //else
-            model.modify(key, oldValue, newValue)
+        model.modify(key, oldValue, newValue, associatedValue)
         //println("MODIFYING UNDO : ${associatedValue}")
 
         updateFunction?.invoke()

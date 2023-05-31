@@ -14,7 +14,7 @@ class TextAreaView(private val model: JsonObjectBuilder): JTextArea(){
                 println("Removed "+model.data)
             }
 
-            override fun modifyItem(key: String, newValue: String, oldValue: String) {
+            override fun modifyItem(key: String, newValue: String, oldValue: String, associatedValue: JsonValue?) {
                 text = model.jsonData.toJsonString
                 println("Modified "+model.data)
             }
