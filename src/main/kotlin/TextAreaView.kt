@@ -4,7 +4,7 @@ class TextAreaView(private val model: JsonObjectBuilder): JTextArea(){
     init{
         text = model.jsonData.toJsonString
         model.addObserver(object: JsonBuilderObserver{
-            override fun addItem(key: String) {
+            override fun addItem(key: String, value: JsonValue) {
                 text = model.jsonData.toJsonString
                 println("Added "+model.data)
             }

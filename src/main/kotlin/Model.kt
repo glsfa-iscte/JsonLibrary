@@ -6,6 +6,7 @@
 sealed interface JsonValue {
     // Returns a string representation of this JsonValue in JSON format
     val toJsonString: String
+    fun getJsonValue(): Any?
 }
 
 /**
@@ -30,6 +31,10 @@ sealed interface JsonStructure : JsonValue {
 data class JsonString(val value: String) : JsonValue {
     override val toJsonString: String
         get() = " \"$value\" "
+
+    override fun getJsonValue(): String {
+        return value
+    }
 }
 
 /**
@@ -41,6 +46,10 @@ data class JsonString(val value: String) : JsonValue {
 data class JsonNumber(val value: Number) : JsonValue {
     override val toJsonString: String
         get() = " $value "
+
+    override fun getJsonValue(): Number {
+        return value
+    }
 }
 
 /**
@@ -52,6 +61,9 @@ data class JsonNumber(val value: Number) : JsonValue {
 data class JsonBoolean(val value: Boolean) : JsonValue {
     override val toJsonString: String
         get() = " $value "
+    override fun getJsonValue(): Boolean {
+        return value
+    }
 }
 
 /**
@@ -63,6 +75,9 @@ data class JsonBoolean(val value: Boolean) : JsonValue {
 data class JsonNull(val value: Any? = null) : JsonValue {
     override val toJsonString: String
         get() = " null "
+    override fun getJsonValue(): Any? {
+        return null
+    }
 }
 
 internal fun parseToOriginalReturnType(input: String): Any? {
@@ -78,7 +93,7 @@ internal fun parseToOriginalReturnType(input: String): Any? {
 }
 //CONDENSED JsonObjectObserver AND JsonArrayObserver INTO ONE INTERFACE, TO REDUCE DUPLICATE CODE
 interface JsonBuilderObserver {
-    fun addItem(key: String) { }
+    fun addItem(key: String, value: JsonValue) { }
     fun removeItem(key: String) { }
     fun modifyItem(key: String, newValue: String, oldValue: String) { }
     fun refreshModel() { }
@@ -100,7 +115,8 @@ abstract class JsonBuilder{
     fun removeObserver(observer: JsonBuilderObserver) {
         observers.remove(observer)
     }
-    abstract fun add(key: String)
+    // CHANGED SO THAT I CAN ADD A VALUE THAT ISNT JUST JSON NULL (GOR THE UNDO STACK AND INSTANCIATION)
+    abstract fun add(key: String, value:JsonValue)
     fun remove(key: String){
         data.remove(key)
         observers.forEach {
@@ -109,22 +125,28 @@ abstract class JsonBuilder{
     }
      fun modify(key: String, newValue: String, oldValue: String) {
         if (oldValue != newValue) {
+            println("RCV MOD model ${data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
             val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
             data[key] = jsonValue
+            println("SND MOD model ${data} key ${key} newvalue ${newValue} oldvalue ${oldValue} ")
             observers.forEach {
                 it.modifyItem(key, newValue, newValue)
             }
         }
     }
 }
-class JsonObjectBuilder : JsonBuilder() {
+class JsonObjectBuilder(val initialJsonObject: JsonObject) : JsonBuilder() {
     override val jsonData: JsonStructure = JsonObject(data)
-
-    override fun add(key: String) {
+    init {
+        //if(initialData.isNotEmpty()) data.putAll(initialData)
+        if(!initialJsonObject.properties.isNullOrEmpty()) data.putAll(initialJsonObject.properties)
+    }
+    override fun add(key: String, value: JsonValue) {
         if (!data.containsKey(key)) {
-            data[key] = JsonNull()
+            data[key] = value //JsonNull()
             observers.forEach {
-                it.addItem(key)
+                //TODO ANTES DE ENVIAR ELE TEM QUE MANDAR SÓ UMA STRING DO CONTEUDO
+                it.addItem(key, value)
             }
         }
     }
@@ -134,119 +156,27 @@ class JsonObjectBuilder : JsonBuilder() {
         }
     }
 }
-class JsonArrayBuilder : JsonBuilder() {
+class JsonArrayBuilder(val initialJsonArray: JsonArray) : JsonBuilder() {
+    //EU QUERIA MANTER USAR UMA CHAVE PARA IDENTIFICAR CADA ELEMENTO DO MODEL, PARA NAO APAGAR INCORRETAMENTE, MAS AO FAZER ISSO, TIVE QUE FAZER ESTA PROPRIEDADE CLACULADA
+    //COM ISSO DEPOIS CRIA O PROBLEMA QUE AS MUDANÇAS NÃO SAO PROPAGADAS DE FORMA INSTANTANEA ATÉ O jsonData ser acedido
     override val jsonData: JsonStructure
         get() = JsonArray(data.values.toList())
+    var lastIndex: Int = -1
+    init {
+        //if(initialData.isNotEmpty()) data.putAll(initialData)
+        if(!initialJsonArray.valueList.isNullOrEmpty()) initialJsonArray.valueList.forEachIndexed { index, jsonValue ->
+            data["$index"] = jsonValue
+            lastIndex=index
+        }
+    }
 
-    override fun add(key: String) {
-        data[key] = JsonNull()
+    override fun add(key: String, value: JsonValue) {
+        data[key] = value//JsonNull()
         observers.forEach {
-            it.addItem(key)
+            it.addItem(key, value)
         }
     }
 }
-/*
-class JsonObjectBuilder {
-    var data = mutableMapOf<String, JsonValue>()
-    var jsonData = JsonObject(data)
-    //private val observers = mutableListOf<JsonObjectObserver>()
-    private val observers = mutableListOf<JsonBuilderObserver>()
-    fun addObserver(observer: JsonBuilderObserver) {
-        observers.add(observer)
-    }
-    fun removeObserver(observer: JsonBuilderObserver) {
-        observers.remove(observer)
-    }
-    fun addProperty(key: String) {
-    //THIS WAS model.data instead of just data
-        if(!data.containsKey(key)) {
-            data[key] = JsonNull()
-            observers.forEach {
-                it.addItem(key)
-            }
-        }
-    }
-    fun removeProperty(key: String) {
-        data.remove(key)
-        observers.forEach {
-            it.removeItem(key)
-        }
-    }
-    fun modifyValue(key:String, newValue: String, oldValue: String) {
-        //SE O VALOR DO RESULTADO ANTIGO FOR IGUAL AO MODIFICADO ELE NAO FAZ NADA
-        //ALTERADO PARA VERIFICAR SE O CAMPO FOI ALTERADO CORRETAMENTE
-        //if(oldValue != jsonValue.toJsonString) {
-        if(oldValue != newValue) {
-            val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-            println("OBJECT MODEL |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
-            data[key] = jsonValue
-            observers.forEach {
-                //ALTERED SO THAT IT AVOIDS SETTING THE NEW OBJECT WITH UNNECESSARY SPACES
-                // it.modifyProperty(key, jsonValue.toJsonString, jsonValue.toJsonString)
-                it.modifyItem(key, newValue, newValue)
-            }
-        }
-    }
-    //ADICIONADO DE FORMA A AVISAR OS OUVINTES, NESTE CASO SO OS TEXTAREAVIEW (JÁ QUE OS OUTROS NÃO IMPEMENTAM ESTE METODO), DE QUE UM NESTED FOI ADICIONADO E O TEXTO TEM QUE SER UPDATED
-    fun refreshModel(){
-        observers.forEach {
-            it.refreshModel()
-        }
-    }
-}
-
-//interface JsonArrayObserver {
-//    fun addValue(key: String) { }
-//    fun removeValue(key: String){ }
-//    fun modifyValue(key: String, newValue: String, oldValue: String){ }
-//}
-
-class JsonArrayBuilder {
-    var data = mutableMapOf<String, JsonValue>()
-    //CHANGED SO THAT I DON'T HAVE TO MANUALLY UPDATE IT
-    //var jsonData = JsonArray(data.values.toList())
-    val jsonData: JsonArray
-        get() = JsonArray(data.values.toList())
-
-    private val observers = mutableListOf<JsonBuilderObserver>()
-
-    fun addObserver(observer: JsonBuilderObserver) {
-        observers.add(observer)
-    }
-
-
-    fun removeObserver(observer: JsonBuilderObserver) {
-        observers.remove(observer)
-    }
-
-    fun addValue(key: String) {
-        //println("3 MODEL")
-        data[key] = JsonNull()
-        //println("DATA HAS: |${data.values}| JSONARR: |${jsonData}|")
-        observers.forEach {
-            it.addItem(key)
-        }
-    }
-    fun removeValue(key:String) {
-        data.remove(key)
-        observers.forEach {
-            it.removeItem(key)
-        }
-    }
-    fun modifyValue(key:String, newValue: String, oldValue: String) {
-        if(oldValue != newValue) {
-            val jsonValue = instanciateJson(parseToOriginalReturnType(newValue))
-            //println("ARRAY MODEL |${jsonValue.toJsonString}| OLD |${oldValue}| NEW |${newValue}| KEY |${key}|")
-            data[key] = jsonValue
-            observers.forEach {
-                //ALTERED SO THAT IT AVOIDS SETTING THE NEW OBJECT WITH UNNECESSARY SPACES
-                it.modifyItem(key, newValue, newValue)
-            }
-        }
-    }
-}
-
- */
 /**
  * Json object - This dataclass is used to represent a Json Object
  *
@@ -287,6 +217,10 @@ data class JsonObject(val properties: Map<String, JsonValue>? = null) : JsonStru
     override fun accept(visitor: Visitor) {
         visitor.visit(this)
     }
+
+    override fun getJsonValue(): Any? {
+        return properties
+    }
 }
 
 /**
@@ -320,6 +254,10 @@ data class JsonArray(val valueList: List<JsonValue>? = null) : JsonStructure {
         }
     override fun accept(visitor: Visitor) {
         visitor.visit(this)
+    }
+
+    override fun getJsonValue(): Any? {
+        return valueList
     }
 
 }

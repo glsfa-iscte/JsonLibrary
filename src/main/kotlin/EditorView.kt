@@ -5,7 +5,7 @@ import java.awt.event.*
 import javax.swing.*
 
 interface EditorViewObserver {
-    fun addItem(key: String) { }
+    fun addItem(key: String, value: JsonValue) { }
     fun removeItem(key: String){ }
     fun modifyItem(key: String, newValue: String, oldValue: String){ }
 }
@@ -22,6 +22,12 @@ interface EditorViewObserver {
             border =  BorderFactory.createLineBorder(Color.BLACK, 5)
             maximumSize = Dimension(Int.MAX_VALUE, Int.MAX_VALUE)
 
+            //INITIALIZER
+            println("INITIALIZING MODEL: ${model.jsonData.toJsonString}")
+            model.data.forEach{
+                propertyAdded(it.key, it.value)
+            }
+
             // menu
             addMouseListener(object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
@@ -31,7 +37,7 @@ interface EditorViewObserver {
                         add.addActionListener {
                             val text = JOptionPane.showInputDialog("text")
                             observers.forEach {
-                                it.addItem(text)
+                                it.addItem(text, JsonNull())
                             }
                             menu.isVisible = false
                         }
@@ -42,8 +48,8 @@ interface EditorViewObserver {
                 }
             })
             model.addObserver(object: JsonBuilderObserver{
-                override fun addItem(key: String) {
-                    propertyAdded(key)
+                override fun addItem(key: String, value: JsonValue) {
+                    propertyAdded(key, value)
                 }
 
                 override fun removeItem(key: String) {
@@ -56,8 +62,42 @@ interface EditorViewObserver {
             })
 
         }
-        fun propertyAdded(key: String){
-            add(JsonObjectProperty(key, "N/A"))
+        fun propertyAdded(key: String, value: JsonValue){
+            //add(JsonObjectProperty(key, "N/A"))
+            /* OLD JUST FOR PROGRESS CHECK
+            if(value is JsonNull) add(JsonObjectProperty(key, "N/A"))
+            else {
+                //ESTE VAI SOBRETUDO FUNCIONAR PARA QUANDO ADICIONO PELO INITIAL MODEL
+                if(value is JsonObject) {
+                    add(JsonObjectProperty(key, ":"))
+                    createNestedPanel(key, ":", this, value)
+                    println("OBJ")
+                }
+                else if(value is JsonArray) {
+                    add(JsonObjectProperty(key, ""))
+                    createNestedPanel(key, "", this, value)
+                    //add(JsonArrayPanel(JsonArrayBuilder(value), this))
+                    println("ARR")
+                }
+                else add(JsonObjectProperty(key, value.getJsonValue().toString()))
+            }
+            */
+            when (value) {
+                is JsonNull -> add(JsonObjectProperty(key, "N/A"))
+                is JsonObject -> {
+                    add(JsonObjectProperty(key, ":"))
+                    createNestedPanel(key, ":", this, value)
+                }
+
+                is JsonArray -> {
+                    add(JsonObjectProperty(key, ""))
+                    createNestedPanel(key, "", this, value)
+                }
+
+                else -> add(JsonObjectProperty(key, value.getJsonValue().toString()))
+            }
+
+            println("ADDING TO EDITOR ${key} ${value.getJsonValue().toString()}")
             revalidate()
             repaint()
         }
@@ -159,7 +199,7 @@ interface EditorViewObserver {
 class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPanel() {
     private val observers: MutableList<EditorViewObserver> = mutableListOf()
     val nestedPanels: MutableMap<String, JPanel> = mutableMapOf()
-    var keys = 1
+    var keys = if(model.lastIndex != -1) model.lastIndex+1 else 1
     fun getAssociatedModel()= model
     fun addObserver(observer: EditorViewObserver) = observers.add(observer)
 
@@ -171,6 +211,12 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
         border = BorderFactory.createLineBorder(Color.BLACK, 5)
         maximumSize = Dimension(Int.MAX_VALUE, Int.MAX_VALUE)
 
+        //INITIALIZER
+        println("INITIALIZING MODEL ARR: ${model.jsonData.toJsonString}")
+        model.data.forEach{
+            propertyAdded(it.key, it.value)
+        }
+
         // menu
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -181,7 +227,8 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
                         //val text = JOptionPane.showInputDialog("text")
                         observers.forEach {
                             //println("1 CLICK ADD VIEW")
-                            it.addItem(keys.toString())
+                            it.addItem(keys.toString(), JsonNull())
+                            keys++
                         }
                         menu.isVisible = false
                     }
@@ -192,8 +239,8 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
             }
         })
         model.addObserver(object : JsonBuilderObserver {
-            override fun addItem(key: String) {
-                propertyAdded(key)
+            override fun addItem(key: String, value: JsonValue) {
+                propertyAdded(key, value)
             }
 
             override fun removeItem(key: String) {
@@ -206,11 +253,27 @@ class JsonArrayPanel(val model: JsonArrayBuilder, val parentPanel: JPanel) : JPa
         })
 
     }
-    fun propertyAdded(key: String) {
+    fun propertyAdded(key: String, value: JsonValue) {
         //println("4 UPDATE VIEW")
         //println("ARR PROPERTY ADDED: |${keys}| |${key}|")
-        add(JsonArrayProperty(key, "N/A"))
-        keys++
+        //add(JsonArrayProperty(key, "N/A"))
+        //if(value is JsonNull) add(JsonArrayProperty(key, "N/A"))
+       // else add(JsonArrayProperty(key, value.toJsonString))
+        when (value) {
+            is JsonNull -> add(JsonArrayProperty(key, "N/A"))
+            is JsonObject -> {
+                add(JsonArrayProperty(key, ":"))
+                createNestedPanel(key, ":", this, value)
+            }
+
+            is JsonArray -> {
+                add(JsonArrayProperty(key, ""))
+                createNestedPanel(key, "", this, value)
+            }
+
+            else -> add(JsonArrayProperty(key, value.getJsonValue().toString()))
+        }
+        println("ADDING TO EDITOR ARR ${key} ${value.getJsonValue().toString()}")
         revalidate()
         repaint()
     }
